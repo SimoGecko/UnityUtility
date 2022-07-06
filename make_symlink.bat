@@ -1,7 +1,4 @@
 @echo off
+set /p projname="Insert your project name:"
 
-set /p folder="Enter folder: "
-
-mklink /J "x:\Unity\%folder%\Assets\Scripts\Utility\" "x:\Unity\Utility\"
-
-pause
+mklink /J "x:\Unity\%projname%\Assets\Scripts\Utility\" "x:\Unity\Utility\"

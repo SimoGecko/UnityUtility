@@ -363,6 +363,7 @@ namespace sxg
             return Vector2.zero;
         }
 
+
         ////////////////////////// VECTOR3 ////////////////////////////////
         public static Vector2      To2                  (this Vector3 vector)
         {
@@ -1033,6 +1034,7 @@ namespace sxg
             transform.localScale = Clean(transform.localScale, 1f, eps);
         }
 
+
         ////////////////////////// STRING ////////////////////////////////
         public static string       RemoveSpaceAndTabs   (this string s)
         {
@@ -1177,6 +1179,7 @@ namespace sxg
             tokens = null;
             return false;
         }
+
 
         ////////////////////////// ROUTINE / INVOKE ////////////////////////////////
         public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f)
@@ -1385,6 +1388,7 @@ namespace sxg
 
         ////////////////////////// IMAGES ////////////////////////////////
 
+
         ////////////////////////// MESH ////////////////////////////////
         public static Mesh         MakeMesh             (IEnumerable<Vector3> vertices, IEnumerable<int> indices, int submesh = 0)
         {
@@ -1406,6 +1410,7 @@ namespace sxg
 
             return mesh;
         }
+
 
         ////////////////////////// COLOR ////////////////////////////////
         public static string       ToHex                (this Color color)
@@ -1450,6 +1455,7 @@ namespace sxg
             color.a = alpha;
             return color;
         }
+
 
         ////////////////////////// TIME ////////////////////////////////
         public static void         LogWithTime          (string message)
