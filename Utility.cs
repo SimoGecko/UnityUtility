@@ -162,6 +162,13 @@ namespace sxg
             return Mathf.Ceil(value / amount) * amount;
         }
 
+        public static float        Clean                (float value, float amount, float eps)
+        {
+            float closest = Mathf.Round(value/amount) * amount;
+            if (Mathf.Abs(closest-value) <= eps) return closest;
+            return value;
+        }
+
         public static Vector2      Round                (this Vector2 vector, int amount)
         {
             return new Vector2(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount);
@@ -194,6 +201,11 @@ namespace sxg
         public static Vector3      RoundF               (this Vector3 vector, float amount)
         {
             return new Vector3(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount, Mathf.Round(vector.z / amount) * amount);
+        }
+        
+        public static Vector3      Clean                (this Vector3 vector, float amount, float eps)
+        {
+            return new Vector3(Clean(vector.x, amount, eps), Clean(vector.y, amount, eps), Clean(vector.z, amount, eps));
         }
 
         public static void         RoundTo              (this Transform transform, float amount)
@@ -1013,6 +1025,12 @@ namespace sxg
                     PrintChildren(child, sb, recursive, depth+1);
                 }
             }
+        }
+        public static void         Clean                (this Transform transform, float eps = 1e-4f)
+        {
+            transform.localPosition = Clean(transform.localPosition, 1f, eps);
+            transform.localEulerAngles = Clean(transform.localEulerAngles, 90f, eps);
+            transform.localScale = Clean(transform.localScale, 1f, eps);
         }
 
         ////////////////////////// STRING ////////////////////////////////

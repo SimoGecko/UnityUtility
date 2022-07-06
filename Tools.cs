@@ -22,6 +22,13 @@ namespace sxg
             Debug.Log($"{selected.name} has {numChildren} children");
         }
 
+        [UnityEditor.MenuItem("Tools/Clean Transforms")]
+        public static void CleanTransforms()
+        {
+            GameObject selected = UnityEditor.Selection.activeGameObject;
+            selected.transform.ForeachDescendant(t => t.Clean(0.001f), true);
+        }
+
 #endif // UNITY_EDITOR
     }
 }

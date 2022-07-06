@@ -111,7 +111,7 @@ namespace sxg
                     GUILayout.BeginHorizontal();
                 }
 
-                if(GUILayout.Button(new GUIContent(label, attribute.Tooltip)))
+                if (GUILayout.Button(new GUIContent(label, attribute.Tooltip)))
                 {
                     var method = memberInfo as MethodInfo;
                     method.Invoke(mono, null);
