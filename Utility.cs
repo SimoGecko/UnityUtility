@@ -207,7 +207,6 @@ namespace sxg
         {
             return new Vector3(Clean(vector.x, amount, eps), Clean(vector.y, amount, eps), Clean(vector.z, amount, eps));
         }
-
         public static void         RoundTo              (this Transform transform, float amount)
         {
             transform.localPosition = RoundF(transform.localPosition, amount);
@@ -373,6 +372,36 @@ namespace sxg
         {
             return new Vector2Int(vector.x, vector.z);
         }
+        public static bool         Collinear            (this Vector3 a, Vector3 b)
+        {
+            return Vector3.Cross(a, b).sqrMagnitude < 0.001f;
+        }
+        public static Vector3      Y                    (this Vector3 vector)
+        {
+            return new Vector3(0f, vector.y, 0f);
+        }
+        public static Vector3      XZ                   (this Vector3 vector)
+        {
+            return new Vector3(vector.x, 0f, vector.z);
+        }
+        public static bool         IsZero               (this Vector3 vector)
+        {
+            float eps = 0.001f;
+            return vector.sqrMagnitude <= eps * eps;
+        }
+
+        public static Vector3      xAxis                () { return Vector3.right; }              
+        public static Vector3      yAxis                () { return Vector3.up; }              
+        public static Vector3      zAxis                () { return Vector3.forward; }
+
+
+        ////////////////////////// QUATERNION ////////////////////////////////
+        public static Quaternion   FlipX                (this Quaternion q)
+        {
+            q.ToAngleAxis(out float angle, out Vector3 axis);
+            axis.x *= -1f; // flip along x
+            return Quaternion.AngleAxis(-angle, axis);
+        }
 
 
         ////////////////////////// RANDOM ////////////////////////////////
@@ -525,6 +554,10 @@ namespace sxg
                 if (predicate(elem)) return elem;
             }
             return defaultT;
+        }
+        public static bool         Contains<T>          (this IEnumerable<T> enumerable, T element)
+        {
+            return enumerable.FindIndex(element) != -1;
         }
         public static int          FindIndex<T>         (this IEnumerable<T> enumerable, T element)
         {
@@ -992,6 +1025,13 @@ namespace sxg
                 GameObject.Destroy(transform.GetChild(i).gameObject);
             }
         }
+        public static void         DestroyAllChildrenImmediate(this Transform transform)
+        {
+            for (int i = transform.childCount - 1; i >= 0; --i)
+            {
+                GameObject.DestroyImmediate(transform.GetChild(i).gameObject);
+            }
+        }
         public static void         SortChildren         (this Transform transform, bool recursive = false)
         {
             // PURPOSE: Sorts the children of the given gameobject by name
@@ -1011,7 +1051,7 @@ namespace sxg
                 ts[i].SetSiblingIndex(i);
             }
         }
-        public static void         PrintChildren         (this Transform transform, StringBuilder sb, bool recursive = true, int depth = 0)
+        public static void         PrintChildren        (this Transform transform, StringBuilder sb, bool recursive = true, int depth = 0)
         {
             // PURPOSE: prints the children of the given gameobject by name
             sb.Append(new string('\t', depth));
@@ -1026,6 +1066,49 @@ namespace sxg
                     PrintChildren(child, sb, recursive, depth+1);
                 }
             }
+        }
+        public static Transform    FindDescendant       (this Transform transform, string name)
+        {
+            // NOTES: Transform.Find only looks in the children, not in the descendants
+            if (transform.gameObject.name == name) return transform;
+
+            Queue<Transform> queue = new();
+            queue.Enqueue(transform);
+
+            while (queue.Count > 0)
+            {
+                Transform t = queue.Dequeue();
+                for (int i = 0; i < t.childCount; i++)
+                {
+                    Transform c = t.GetChild(i);
+                    if (c.gameObject.name == name) return c;
+                    if (c.childCount > 0) queue.Enqueue(c);
+                }
+            }
+            return null;
+        }
+        public static Transform    FindChildOrCreate    (this Transform transform, string name)
+        {
+            Transform child = transform.Find(name);
+            if (child == null)
+            {
+                child = new GameObject(name).transform;
+                child.parent = transform;
+                child.Reset();
+            }
+            return child;
+        }
+        public static void         CopyPositionRotation (this Transform transform, Transform other)
+        {
+            if (transform == null || other == null) return;
+            transform.position = other.position;
+            transform.rotation = other.rotation;
+        }
+        public static void         Reset                (this Transform transform)
+        {
+            transform.localPosition = Vector3.zero;
+            transform.localRotation = Quaternion.identity;
+            transform.localScale = Vector3.one;
         }
         public static void         Clean                (this Transform transform, float eps = 1e-4f)
         {
@@ -1572,6 +1655,18 @@ namespace sxg
             }
             collider.points = points;
         }
+
+
+        ////////////////////////// CAMERA ////////////////////////////////
+        public static Vector3      EditorCameraPos()
+        {
+#if UNITY_EDITOR
+            return UnityEditor.SceneView.lastActiveSceneView.camera.transform.position;
+#else
+            return Vector3.zero;
+#endif // UNITY_EDITOR
+        }
+
 
     }
 }

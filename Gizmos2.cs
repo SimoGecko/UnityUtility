@@ -105,5 +105,25 @@ namespace sxg
             Gizmos.DrawLine(points[^1], points[0]);
         }
 
+        public static void DrawTransform(this Transform transform, float scale = 0.1f, float alpha = 0.93f)
+        {
+            DrawTransform(transform.position, transform.rotation, scale, alpha);
+        }
+        public static void DrawTransform(Vector3 position, Quaternion rotation, float scale = 0.1f, float alpha = 0.93f)
+        {
+            Gizmos.color = new Color32(219, 62, 29, 237); // unity red
+            Gizmos2.DrawLine(position, position + (rotation * Vector3.right) * scale, 2f);
+            Gizmos.color = new Color32(154, 243, 72, 237); // unity green
+            Gizmos2.DrawLine(position, position + (rotation * Vector3.up   ) * scale, 2f);
+            Gizmos.color = new Color32(58, 122, 248, 237); // unity blue
+            Gizmos2.DrawLine(position, position + (rotation * Vector3.forward) * scale, 2f);
+        }
+
+        private static void DrawLine(Vector3 from, Vector3 to, float thickness = 3f)
+        {
+            UnityEditor.Handles.color = Gizmos.color;
+            UnityEditor.Handles.DrawLine(from, to, thickness);
+        }
+
     }
 }
