@@ -15,28 +15,32 @@ namespace sxg
         }
         public static void DrawWireCircle   (Vector3 center, float radius, bool drawAxes = false)
         {
-#if (SEDITOR && UNITY_EDITOR)
-            UnityEditor.Handles.color = Gizmos.color;
-            UnityEditor.Handles.DrawWireDisc(center, Vector3.forward, radius);
-            if (drawAxes)
-            {
-                Gizmos.DrawLine(center - Vector3.right * radius, center + Vector3.right * radius);
-                Gizmos.DrawLine(center - Vector3.up * radius, center + Vector3.up * radius);
-            }
-#endif
+            DrawWireCircle(center, radius, Vector3.forward, drawAxes);
         }
         public static void DrawWireCircleXZ (Vector3 center, float radius, bool drawAxes = false)
         {
+            DrawWireCircle(center, radius, Vector3.up, drawAxes);
+        }
+        public static void DrawWireCircleCamFacing(Vector3 center, float radius, bool drawAxes = false)
+        {
+            DrawWireCircle(center, radius, Utility.EditorCameraPos()-center, drawAxes);
+        }
+        public static void DrawWireCircle   (Vector3 center, float radius, Vector3 normal, bool drawAxes = false)
+        {
 #if (SEDITOR && UNITY_EDITOR)
             UnityEditor.Handles.color = Gizmos.color;
-            UnityEditor.Handles.DrawWireDisc(center, Vector3.up, radius);
+            UnityEditor.Handles.DrawWireDisc(center, normal, radius);
             if (drawAxes)
             {
-                Gizmos.DrawLine(center - Vector3.right * radius, center + Vector3.right * radius);
-                Gizmos.DrawLine(center - Vector3.forward * radius, center + Vector3.forward * radius);
+                Vector3 axis1 = Vector3.zero;
+                Vector3 axis2 = Vector3.zero;
+                Vector3.OrthoNormalize(ref normal, ref axis1, ref axis2);
+                Gizmos.DrawLine(center - axis1 * radius, center + axis1 * radius);
+                Gizmos.DrawLine(center - axis2 * radius, center + axis2 * radius);
             }
 #endif
         }
+
         public static void DrawWireCube     (Vector3 center, Vector3 size)
         {
             Gizmos.DrawWireCube(center, size);

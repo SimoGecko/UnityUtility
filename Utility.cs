@@ -1150,7 +1150,7 @@ namespace sxg
         {
             return SplitCsv(textAsset.text, textAsset.name);
         }
-        public static string[][]   SplitCsv             (string content, string filename = "")
+        public static string[][]   SplitCsv             (string content, string filename = "", bool trim = false)
         {
             string[] lines = content.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
             string[][] cells = new string[lines.Length][];
@@ -1161,6 +1161,16 @@ namespace sxg
                 cells[i] = lines[i].Split(new char[] { '\t' }, StringSplitOptions.None);
                 if (i == 0) cols = cells[i].Length;
                 else { Debug.Assert(cells[i].Length == cols, $"The provided CSV {filename} file to split in not square (line {i})"); }
+            }
+            if (trim)
+            {
+                for (int i = 0; i < cells.Length; i++)
+                {
+                    for (int j = 0; j < cells[i].Length; j++)
+                    {
+                        cells[i][j] = cells[i][j].Trim();
+                    }
+                }
             }
             return cells;
         }
