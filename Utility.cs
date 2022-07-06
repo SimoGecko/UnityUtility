@@ -224,9 +224,6 @@ namespace sxg
         }
         public static Vector2      GetInversePoint      (this Rect rect, Vector2 point)
         {
-            //return new Vector2(
-            //    Mathf.InverseLerp(rect.xMin, rect.xMax, point.x),
-            //    Mathf.InverseLerp(rect.yMin, rect.yMax, point.y));
             return new Vector2(
                 (point.x - rect.xMin) / rect.width,
                 (point.y - rect.yMin) / rect.height);
@@ -288,7 +285,7 @@ namespace sxg
             float angle = Mathf.Atan2(vector.x, vector.y);
             float magnitude = vector.magnitude;
             {
-                angle /= (2f * Mathf.PI);// + 0.5f / angleQuantization;
+                angle /= (2f * Mathf.PI); // + 0.5f / angleQuantization;
                 //angle = angle - Mathf.Floor(angle);
                 angle = Mathf.Round(angle * angleQuantization) / angleQuantization;
                 angle *= (2f * Mathf.PI);
@@ -486,37 +483,6 @@ namespace sxg
         {
             return Mathf.Max(0f, UnityEngine.Random.Range(average - deviation, average + deviation));
         }
-        /* public static void TestDistributions()
-        {
-            const int numSamples = 1000;
-            string s = "skewed:\n";
-            for (int i = 0; i < numSamples; ++i)
-            {
-                s += Utility.NormalSkewed(17, 50, 45) + "\n";
-            }
-            Debug.Log(s);
-            
-            s = "fromto:\n";
-            for (int i = 0; i < numSamples; ++i)
-            {
-                s += Utility.NormalFromTo(2, 4) + "\n";
-            }
-            Debug.Log(s);
-            
-            s = "normal:\n";
-            for (int i = 0; i < numSamples; ++i)
-            {
-                s += Utility.Normal() + "\n";
-            }
-            Debug.Log(s);
-            
-            s = "normal2:\n";
-            for (int i = 0; i < numSamples; ++i)
-            {
-                s += Utility.Normal(6.5f, 1.5f) + "\n";
-            }
-            Debug.Log(s);
-        } */
 
 
         ////////////////////////// SEQUENCES / COLLECTIONS ////////////////////////////////
@@ -684,8 +650,9 @@ namespace sxg
         {
             return Generate(num, value, 0);
         }
-        public static int[]        Sequence             (int from, int to /*exclusive*/)
+        public static int[]        Sequence             (int from, int to)
         {
+            // NOTES: to is exclusive
             return Generate(to - from, from, 1);
         }
         public static List<T>      Rotate<T>            (this List<T> list, int offset)
@@ -741,8 +708,6 @@ namespace sxg
             {
                 return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
             }
-            //float d1, d2, d3;
-            //bool has_neg, has_pos;
 
             float d1 = sign(p, a, b);
             float d2 = sign(p, b, c);
@@ -964,17 +929,6 @@ namespace sxg
             if (FindSegmentDistanceToPointSquared(s2, s1.b) <= dist2) return true;
             return false;
         }
-        //public static Vector2      FindIntersectionPointWithOffset_Old(Vector2 p0, Vector2 p1, Vector2 p2, float offset)
-        //{
-        //    Vector2 d0 = (p1 - p0).normalized;
-        //    Vector2 d1 = (p2 - p1).normalized;
-        //    Vector2 t0 = d0.RotateNeg90();
-        //    Vector2 t1 = d1.RotateNeg90();
-        //    float w = offset;
-        //    Ray2D r0 = new Ray2D(p0 + t0 * w, d0);
-        //    Ray2D r1 = new Ray2D(p2 + t1 * w, -d1);
-        //    return Intersect(r0, r1);
-        //}
 
 
         ////////////////////////// ENUM ////////////////////////////////
@@ -1244,7 +1198,6 @@ namespace sxg
         public static bool         Like                 (this string input, string pattern)
         {
             return Regex.IsMatch(input, $"^{pattern}$");
-            //return Regex.IsMatch(input, pattern);
         }
         public static bool         IsRegexMatch         (this string input, string pattern, out string[] tokens)
         {
@@ -1291,7 +1244,8 @@ namespace sxg
         }
         public static void         Invoke               (Action action, float delay)
         {
-            Debug.LogWarning("Invoke without mb is disabled");
+            // TODO: remove
+            Debug.LogWarning("Invoke without mb is disabled. Please call the Invoke on a MonoBehavior");
             //Invoke(CoroutineManager.Instance, action, delay);
         }
         private static IEnumerator PrivateInvokeRoutine (Action action, float delay)
@@ -1299,11 +1253,6 @@ namespace sxg
             yield return new WaitForSeconds(delay);
             action();
         }
-        /*public static IEnumerator Invoke(Action f, float delay)
-        {
-            yield return new WaitForSeconds(delay);
-            f();
-        }*/
 
 
         ////////////////////////// GAMEOBJECT / COMPONENT ////////////////////////////////
@@ -1402,7 +1351,6 @@ namespace sxg
             s = RemoveSpaceAndTabs(s);
             string[] values = s.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             T result = new();
-            //T result = default(T);
             int v = 0;
             foreach (var fi in typeof(T).GetFields())
             {
@@ -1449,21 +1397,6 @@ namespace sxg
             UnityEditor.EditorUtility.SetDirty(obj);
 #endif
         }
-
-        // PURPOSE: Returns the gameobject with name, looking also through disabled objects
-        //public static void BindSerie(this Component mb, out object[] result)
-        //{
-        //
-        //}
-        //public static void AssertNotNull<T>(this MonoBehaviour mb, params T[] components) where T : Component
-        //{
-        //    foreach(T component in components)
-        //    {
-        //        Debug.Assert(component != null, $"{nameof(component)} is null on {mb.gameObject.name}");
-        //    }
-        //}
-
-        // OTHER
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
