@@ -165,7 +165,7 @@ namespace sxg
         public static float        Clean                (float value, float amount, float eps)
         {
             float closest = Mathf.Round(value/amount) * amount;
-            if (Mathf.Abs(closest-value) <= eps) return closest;
+            if (Mathf.Abs(closest - value) <= eps) return closest;
             return value;
         }
 
@@ -202,7 +202,7 @@ namespace sxg
         {
             return new Vector3(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount, Mathf.Round(vector.z / amount) * amount);
         }
-        
+
         public static Vector3      Clean                (this Vector3 vector, float amount, float eps)
         {
             return new Vector3(Clean(vector.x, amount, eps), Clean(vector.y, amount, eps), Clean(vector.z, amount, eps));
@@ -476,8 +476,8 @@ namespace sxg
             // TODO: this has to be fixed as it's not continuous and the expected value is not the avg
             float cutoff = 3.3f;
             float n01 = Mathf.Clamp01(Normal() / (2f * cutoff) + 0.5f);
-            if (n01 < 0.5f) return Mathf.Lerp(min, avg, n01*2f);
-            else return Mathf.Lerp(avg, max, (n01-0.5f)*2f);
+            if (n01 < 0.5f) return Mathf.Lerp(min, avg, n01 * 2f);
+            else return Mathf.Lerp(avg, max, (n01 - 0.5f) * 2f);
         }
         public static float        SampleRandomDistribution(float average, float deviation)
         {
@@ -504,7 +504,7 @@ namespace sxg
         public static T            GetClamp<T>          (this IEnumerable<T> enumerable, int index, T defaultT = default)
         {
             if (enumerable == null || enumerable.Count() == 0) return defaultT;
-            return enumerable.ElementAt(Mathf.Clamp(index, 0, enumerable.Count()-1));
+            return enumerable.ElementAt(Mathf.Clamp(index, 0, enumerable.Count() - 1));
         }
         public static T            GetRandom<T>         (this IEnumerable<T> enumerable, T defaultT = default)
         {
@@ -515,7 +515,7 @@ namespace sxg
         public static T            Find<T>              (this IEnumerable<T> enumerable, Predicate<T> predicate, T defaultT = default)
         {
             if (enumerable == null || enumerable.Count() == 0) return defaultT;
-            foreach(T elem in enumerable)
+            foreach (T elem in enumerable)
             {
                 if (predicate(elem)) return elem;
             }
@@ -609,15 +609,15 @@ namespace sxg
         {
             float maxValue = array.Max();
             bool oneDifferent = false;
-            foreach(float f in array)
+            foreach (float f in array)
             {
-                if(f != maxValue)
+                if (f != maxValue)
                 {
                     oneDifferent = true;
                     break;
                 }
             }
-            if(oneDifferent == false)
+            if (oneDifferent == false)
             {
                 return -1; // the array is exactly the same for all
             }
@@ -723,7 +723,7 @@ namespace sxg
             // TODO: add special case if they are very close (at least 2 points)
             Vector2 pab = (a + b) / 2f;
             Vector2 pac = (a + c) / 2f;
-            if(FindSegmentIntersection(pab, c, pac, b, out Vector2 ans))
+            if (FindSegmentIntersection(pab, c, pac, b, out Vector2 ans))
             {
                 return ans;
             }
@@ -1083,7 +1083,7 @@ namespace sxg
         }
         public static string       RemoveAll            (this string s, string characters)
         {
-            foreach(char c in characters)
+            foreach (char c in characters)
             {
                 s = s.Replace(c.ToString(), string.Empty);
             }
@@ -1212,7 +1212,7 @@ namespace sxg
         public static bool         IsRegexMatch         (this string input, string pattern, out string[] tokens)
         {
             Regex regex = new(pattern);
-            if(regex.IsMatch(input))
+            if (regex.IsMatch(input))
             {
                 GroupCollection gc = regex.Match(input).Groups;
                 tokens = new string[gc.Count];
@@ -1323,7 +1323,7 @@ namespace sxg
         }
         public static GameObject   FindNameAll          (string name)
         {
-            foreach(GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
+            foreach (GameObject go in Resources.FindObjectsOfTypeAll(typeof(GameObject)) as GameObject[])
             {
                 if (go.name == name) return go;
             }

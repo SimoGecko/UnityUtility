@@ -23,7 +23,7 @@ namespace sxg
         }
         public static void DrawWireCircleCamFacing(Vector3 center, float radius, bool drawAxes = false)
         {
-            DrawWireCircle(center, radius, Utility.EditorCameraPos()-center, drawAxes);
+            DrawWireCircle(center, radius, Utility.EditorCameraPos() - center, drawAxes);
         }
         public static void DrawWireCircle   (Vector3 center, float radius, Vector3 normal, bool drawAxes = false)
         {
@@ -118,7 +118,7 @@ namespace sxg
             Gizmos.color = new Color32(219, 62, 29, 237); // unity red
             Gizmos2.DrawLine(position, position + (rotation * Vector3.right) * scale, 2f);
             Gizmos.color = new Color32(154, 243, 72, 237); // unity green
-            Gizmos2.DrawLine(position, position + (rotation * Vector3.up   ) * scale, 2f);
+            Gizmos2.DrawLine(position, position + (rotation * Vector3.up) * scale, 2f);
             Gizmos.color = new Color32(58, 122, 248, 237); // unity blue
             Gizmos2.DrawLine(position, position + (rotation * Vector3.forward) * scale, 2f);
         }
