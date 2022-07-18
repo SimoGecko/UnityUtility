@@ -1123,6 +1123,10 @@ namespace sxg
             const string timestampFormat = "yyyy/MM/dd HH:mm:ss.fff";
             return DateTime.Now.ToString(timestampFormat);
         }
+        public static string       GetTimestampWeb      (System.DateTime value)
+        {
+            return value.ToString("dd/MM/yy_HH:mm:ss");
+        }
 
         public static string       AddSpacesBeforeCapitalLetters(string text, bool preserveAcronyms = true)
         {
