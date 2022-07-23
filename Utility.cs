@@ -434,6 +434,42 @@ namespace sxg
         {
             return Quaternion.Inverse(q);
         }
+        public static Quaternion   SmoothDamp           (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
+        {
+            if (Time.deltaTime < Mathf.Epsilon) return rot;
+            // account for double-cover
+            float dot = Quaternion.Dot(rot, target);
+            float multi = dot >= 0f ? 1f : -1f;
+            target.x *= multi;
+            target.y *= multi;
+            target.z *= multi;
+            target.w *= multi;
+            // smooth damp (nlerp approx)
+            var result = new Vector4(
+                Mathf.SmoothDamp(rot.x, target.x, ref deriv.x, time),
+                Mathf.SmoothDamp(rot.y, target.y, ref deriv.y, time),
+                Mathf.SmoothDamp(rot.z, target.z, ref deriv.z, time),
+                Mathf.SmoothDamp(rot.w, target.w, ref deriv.w, time)
+            ).normalized;
+
+            // ensure deriv is tangent
+            var derivError = Vector4.Project(new Vector4(deriv.x, deriv.y, deriv.z, deriv.w), result);
+            deriv.x -= derivError.x;
+            deriv.y -= derivError.y;
+            deriv.z -= derivError.z;
+            deriv.w -= derivError.w;
+
+            return new Quaternion(result.x, result.y, result.z, result.w);
+        }
+        public static Quaternion   RandomQuaternion     ()
+        {
+            //return Quaternion.Euler(Random.value * 360f, Random.value * 360f, Random.value * 360f);
+            float u = UnityEngine.Random.value;
+            float v = UnityEngine.Random.value;
+            float w = UnityEngine.Random.value;
+            float twoPi = Mathf.PI * 2f;
+            return new Quaternion(Mathf.Sqrt(1f - u) * Mathf.Sin(twoPi * v), Mathf.Sqrt(1f - u) * Mathf.Cos(twoPi * v), Mathf.Sqrt(u) * Mathf.Sin(twoPi * w), Mathf.Sqrt(u) * Mathf.Cos(twoPi * w));
+        }
 
 
         ////////////////////////// RANDOM ////////////////////////////////
@@ -1221,6 +1257,10 @@ namespace sxg
         {
             const string timestampFormat = "yyyy/MM/dd HH:mm:ss.fff";
             return DateTime.Now.ToString(timestampFormat);
+        }
+        public static string       GetTimestampWeb      (System.DateTime value)
+        {
+            return value.ToString("dd/MM/yy_HH:mm:ss");
         }
 
         public static string       AddSpacesBeforeCapitalLetters(string text, bool preserveAcronyms = true)

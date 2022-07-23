@@ -26,7 +26,7 @@ namespace sxg
         public static void CleanTransforms()
         {
             GameObject selected = UnityEditor.Selection.activeGameObject;
-            selected.transform.ForeachDescendant(t => t.Clean(0.001f), true);
+            //selected.transform.ForeachDescendant(t => t.Clean(0.001f), true);
         }
 
         [UnityEditor.MenuItem("Tools/Apply Scale")]

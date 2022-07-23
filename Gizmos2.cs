@@ -119,11 +119,15 @@ namespace sxg
         }
         public static float GetEditorPpu()
         {
+#if (SEDITOR && UNITY_EDITOR)
             GameObject sceneCamObj = GameObject.Find("SceneCamera");
             Vector2 resolution = sceneCamObj?.GetComponent<Camera>().pixelRect.size ?? new(1920, 1080);
             float sceneSize = UnityEditor.SceneView.lastActiveSceneView.size;
             float ppu = resolution.magnitude / sceneSize;
             return ppu;
+#else
+            return 1f;
+#endif
         }
 
         public static void DrawPath         (params Vector3[] points)
@@ -151,8 +155,10 @@ namespace sxg
 
         public static void DrawLine(Vector3 from, Vector3 to, float thickness = 3f)
         {
+#if (SEDITOR && UNITY_EDITOR)
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawLine(from, to, thickness);
+#endif
         }
 
         public static void DrawPath(int steps, Color color, System.Func<float, Vector3> func)
