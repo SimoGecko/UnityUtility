@@ -88,7 +88,7 @@ namespace sxg
         public string Tooltip { get; private set; }
     }
 
-    [CustomEditor(typeof(MonoBehaviour), true)]
+    [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
     public class EditorButton : Editor
     {
         public override void OnInspectorGUI()

@@ -63,6 +63,32 @@ namespace sxg
             Gizmos.DrawWireSphere(center, radius);
         }
 
+        public static void DrawWireCone     (Vector3 from, Vector3 to, float radius)
+        {
+            DrawWireCircle(from, radius, to - from);
+            (to - from).GetTangents(out Vector3 t0, out Vector3 t1);
+            Gizmos.DrawLine(from + t0 * radius, to);
+            Gizmos.DrawLine(from - t0 * radius, to);
+            Gizmos.DrawLine(from + t1 * radius, to);
+            Gizmos.DrawLine(from - t1 * radius, to);
+        }
+
+        public static void DrawWireEllipse  (Vector3 center, float A, float B)
+        {
+            DrawWireEllipse(center, A, B, Quaternion.identity);
+        }
+        public static void DrawWireEllipse(Vector3 center, float A, float B, Quaternion orientation)
+        {
+            //Gizmos.matrix = Matrix4x4.TRS(center, orientation, new Vector3(A, B, 1));
+            //Gizmos.DrawWireSphere(Vector3.zero, 1f);
+            //Gizmos.matrix = Matrix4x4.identity;
+#if (SEDITOR && UNITY_EDITOR)
+            UnityEditor.Handles.matrix = Matrix4x4.TRS(center, orientation, new Vector3(A, B, 1));
+            DrawWireCircle(Vector3.zero, 1f);
+            UnityEditor.Handles.matrix = Matrix4x4.identity;
+#endif
+        }
+
         public static void DrawCircle       (Vector3 center, float radius)
         {
 #if (SEDITOR && UNITY_EDITOR)
@@ -123,10 +149,24 @@ namespace sxg
             Gizmos2.DrawLine(position, position + (rotation * Vector3.forward) * scale, 2f);
         }
 
-        private static void DrawLine(Vector3 from, Vector3 to, float thickness = 3f)
+        public static void DrawLine(Vector3 from, Vector3 to, float thickness = 3f)
         {
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawLine(from, to, thickness);
+        }
+
+        public static void DrawPath(int steps, Color color, System.Func<float, Vector3> func)
+        {
+            Gizmos.color = color;
+            float dt = 1f / steps;
+            Vector3 p = func(0f);
+            for (int i = 1; i <= steps; i++)
+            {
+                float t = i * dt;
+                Vector3 np = func(t);
+                Gizmos.DrawLine(p, np);
+                p = np;
+            }
         }
 
     }
