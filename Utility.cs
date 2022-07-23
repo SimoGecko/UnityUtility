@@ -104,6 +104,20 @@ namespace sxg
         {
             return Mathf.Sign(value) * Mathf.Clamp(value, min, max);
         }
+        public static bool         IsClose              (this float value, float value2)
+        {
+            return Mathf.Abs(value-value2) < 0.0001f;
+        }
+        public static float        SumProduct           (float[] a, float[] b)
+        {
+            Debug.Assert(a.Length == b.Length);
+            float ans = 0f;
+            for (int i = 0; i < a.Length; i++)
+            {
+                ans += a[i] * b[i];
+            }
+            return ans;
+        }
 
 
         ////////////////////////// ANGLE ////////////////////////////////
@@ -373,6 +387,19 @@ namespace sxg
         {
             return Vector3.Cross(a, b).sqrMagnitude < 0.001f;
         }
+        public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
+        {
+            Vector3 normal = vector.normalized;
+
+            // Choose another vector not parallel
+            tangent = (Mathf.Abs(normal.x) < 0.9f) ? xAxis : yAxis;
+
+            // Remove the part that is parallel to Z
+            tangent -= normal * Vector3.Dot(normal, tangent);
+            tangent.Normalize();
+
+            bitangent = Vector3.Cross(normal, tangent);
+        }
         public static Vector3      Y                    (this Vector3 vector)
         {
             return new Vector3(0f, vector.y, 0f);
@@ -386,10 +413,14 @@ namespace sxg
             float eps = 0.001f;
             return vector.sqrMagnitude <= eps * eps;
         }
+        public static bool         IsClose              (this Vector3 vector, Vector3 other)
+        {
+            return Vector3.SqrMagnitude(vector - other) <= 0.000001f; // 0.001f^2
+        }
 
-        public static Vector3      xAxis                () { return Vector3.right; }              
-        public static Vector3      yAxis                () { return Vector3.up; }              
-        public static Vector3      zAxis                () { return Vector3.forward; }
+        public static Vector3      xAxis                => Vector3.right;
+        public static Vector3      yAxis                => Vector3.up;
+        public static Vector3      zAxis                => Vector3.forward; 
 
 
         ////////////////////////// QUATERNION ////////////////////////////////
@@ -398,6 +429,10 @@ namespace sxg
             q.ToAngleAxis(out float angle, out Vector3 axis);
             axis.x *= -1f; // flip along x
             return Quaternion.AngleAxis(-angle, axis);
+        }
+        public static Quaternion   Inverse              (this Quaternion q)
+        {
+            return Quaternion.Inverse(q);
         }
 
 
@@ -1052,6 +1087,46 @@ namespace sxg
             }
             return child;
         }
+        public static void         ForeachDescendant    (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
+        {
+            // BFS
+            if (transform == null || action == null) return;
+            if (includeSelf) action(transform);
+
+            Queue<Transform> queue = new();
+            queue.Enqueue(transform);
+
+            while (queue.Count > 0)
+            {
+                Transform t = queue.Dequeue();
+                // already called action on it
+                for (int i = 0; i < t.childCount; i++)
+                {
+                    Transform child = t.GetChild(i);
+                    action(child);
+                    if (child.childCount > 0) queue.Enqueue(child);
+                }
+            }
+        }
+        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action)
+        {
+            // DFS
+            if (transform == null || action == null) return;
+
+            Stack<Transform> stack = new();
+            stack.Push(transform);
+
+            while (stack.Count > 0)
+            {
+                Transform t = stack.Pop();
+                action(t);
+                for (int i = t.childCount - 1; i >= 0; --i)
+                {
+                    Transform child = t.GetChild(i);
+                    stack.Push(child);
+                }
+            }
+        }
         public static void         CopyPositionRotation (this Transform transform, Transform other)
         {
             if (transform == null || other == null) return;
@@ -1069,6 +1144,30 @@ namespace sxg
             transform.localPosition = Clean(transform.localPosition, 1f, eps);
             transform.localEulerAngles = Clean(transform.localEulerAngles, 90f, eps);
             transform.localScale = Clean(transform.localScale, 1f, eps);
+        }
+        public static Vector3      ToLocalP             (this Transform transform, Vector3 point)
+        {
+            return transform.InverseTransformPoint(point);
+        }
+        public static Vector3      ToWorldP             (this Transform transform, Vector3 point)
+        {
+            return transform.TransformPoint(point);
+        }
+        public static Vector3      ToLocalV             (this Transform transform, Vector3 vector)
+        {
+            return transform.InverseTransformVector(vector);
+        }
+        public static Vector3      ToWorldV             (this Transform transform, Vector3 vector)
+        {
+            return transform.TransformVector(vector);
+        }
+        public static Quaternion   ToLocal              (this Transform transform, Quaternion q)
+        {
+            return Quaternion.Inverse(transform.rotation) * q;
+        }
+        public static Quaternion   ToWorld              (this Transform transform, Quaternion q)
+        {
+            return transform.rotation * q;
         }
 
 
@@ -1413,6 +1512,18 @@ namespace sxg
 
 
         ////////////////////////// IMAGES ////////////////////////////////
+        public static Vector3      TrilinearSample      (Vector3[] points, Vector3 t)
+        {
+            Vector3 a = Vector3.Lerp(points[0], points[1], t.x);
+            Vector3 b = Vector3.Lerp(points[2], points[3], t.x);
+            Vector3 c = Vector3.Lerp(points[4], points[5], t.x);
+            Vector3 d = Vector3.Lerp(points[6], points[7], t.x);
+
+            Vector3 e = Vector3.Lerp(a, b, t.y);
+            Vector3 f = Vector3.Lerp(c, d, t.y);
+
+            return Vector3.Lerp(e, f, t.z);
+        }
 
 
         ////////////////////////// MESH ////////////////////////////////

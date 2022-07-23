@@ -29,6 +29,27 @@ namespace sxg
             selected.transform.ForeachDescendant(t => t.Clean(0.001f), true);
         }
 
+        [UnityEditor.MenuItem("Tools/Apply Scale")]
+        public static void ApplyScale()
+        {
+            GameObject selected = UnityEditor.Selection.activeGameObject;
+            List<Vector3> pos = new();
+            List<Quaternion> rot = new();
+            selected.transform.ForeachDescendant(t =>
+            {
+                pos.Add(t.position);
+                rot.Add(t.rotation);
+            }, true);
+            int i = 0;
+            selected.transform.ForeachDescendant(t =>
+            {
+                t.localScale = Vector3.one;
+                t.position = pos[i];
+                t.rotation = rot[i];
+                ++i;
+            }, true);
+        }
+
 #endif // UNITY_EDITOR
     }
 }
