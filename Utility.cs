@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Text;
 using System.Text.RegularExpressions;
+using UnityEditor;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -117,6 +118,10 @@ namespace sxg
                 ans += a[i] * b[i];
             }
             return ans;
+        }
+        public static bool         Between              (this int value, int minInclusive, int maxInclusive)
+        {
+            return minInclusive <= value && value <= maxInclusive;
         }
 
 
@@ -417,10 +422,18 @@ namespace sxg
         {
             return Vector3.SqrMagnitude(vector - other) <= 0.000001f; // 0.001f^2
         }
+        public static Vector3      mult                 (this Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
+        }
+        public static Vector3      div                  (this Vector3 a, Vector3 b)
+        {
+            return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+        }
 
         public static Vector3      xAxis                => Vector3.right;
         public static Vector3      yAxis                => Vector3.up;
-        public static Vector3      zAxis                => Vector3.forward; 
+        public static Vector3      zAxis                => Vector3.forward;
 
 
         ////////////////////////// QUATERNION ////////////////////////////////
@@ -1508,7 +1521,7 @@ namespace sxg
             }
             return result;
         }
-        public static void         SaveTextureAsPNG     (Texture2D texture, string fullpath)
+        public static void         SaveTextureAsPNG     (this Texture2D texture, string fullpath)
         {
             byte[] _bytes = texture.EncodeToPNG();
             if (!fullpath.EndsWith(".png")) fullpath += ".png";
@@ -1542,11 +1555,20 @@ namespace sxg
         }
         public static void         SetDirty             (this UnityEngine.Object obj)
         {
-#if UNITY_EDITOR
+#if (SEDITOR && UNITY_EDITOR)
             UnityEditor.EditorUtility.SetDirty(obj);
-#endif
+#endif // (SEDITOR && UNITY_EDITOR)
         }
-
+        public static string       GetPath              (this GameObject go)
+        {
+            string path = "/" + go.name;
+            while (go.transform.parent != null)
+            {
+                go = go.transform.parent.gameObject;
+                path = "/" + go.name + path;
+            }
+            return path;
+        }
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
 
@@ -1754,11 +1776,11 @@ namespace sxg
         ////////////////////////// CAMERA ////////////////////////////////
         public static Vector3      EditorCameraPos()
         {
-#if UNITY_EDITOR
+#if (SEDITOR && UNITY_EDITOR)
             return UnityEditor.SceneView.lastActiveSceneView.camera.transform.position;
 #else
             return Vector3.zero;
-#endif // UNITY_EDITOR
+#endif // (SEDITOR && UNITY_EDITOR)
         }
 
 
