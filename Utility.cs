@@ -48,7 +48,7 @@ namespace sxg
     public enum Direction { Up, Left, Down, Right };
 
     // Naming: Get / Find / Compute / 
-    public static class Utility
+    public static partial class Utility
     {
 
         ////////////////////////// MATH ////////////////////////////////
@@ -278,6 +278,10 @@ namespace sxg
         {
             return new Rect(transform.position, transform.localScale);
         }
+        public static float        Volume               (this Bounds b)
+        {
+            return b.size.x * b.size.y * b.size.z;
+        }
 
 
         ////////////////////////// VECTOR2 ////////////////////////////////
@@ -417,6 +421,10 @@ namespace sxg
         {
             return Vector3.SqrMagnitude(vector - other) <= 0.000001f; // 0.001f^2
         }
+        public static Vector3      Mult                 (this Vector3 vector, Vector3 scale)
+        {
+            return new Vector3(vector.x * scale.x, vector.y * scale.y, vector.z * scale.z);
+        }
 
         public static Vector3      xAxis                => Vector3.right;
         public static Vector3      yAxis                => Vector3.up;
@@ -469,6 +477,15 @@ namespace sxg
             float w = UnityEngine.Random.value;
             float twoPi = Mathf.PI * 2f;
             return new Quaternion(Mathf.Sqrt(1f - u) * Mathf.Sin(twoPi * v), Mathf.Sqrt(1f - u) * Mathf.Cos(twoPi * v), Mathf.Sqrt(u) * Mathf.Sin(twoPi * w), Mathf.Sqrt(u) * Mathf.Cos(twoPi * w));
+        }
+        public static Quaternion   FromDirection2D      (this Vector2 direction)
+        {
+            float angle = Mathf.Atan2(direction.y, direction.x);
+            return Quaternion.Euler(-angle*Mathf.Rad2Deg, 90f, 0f);
+        }
+        public static Quaternion   FromAngle2D      (this float angle)
+        {
+            return Quaternion.Euler(-angle, 90f, 0f);
         }
 
 
@@ -553,6 +570,17 @@ namespace sxg
         public static float        SampleRandomDistribution(float average, float deviation)
         {
             return Mathf.Max(0f, UnityEngine.Random.Range(average - deviation, average + deviation));
+        }
+        public static float        SampleWaitTimePoisson(float eventRate)
+        {
+            // exponential distribution CDF: L*exp(-L*x) => inverse: -ln(1-y)/L, y~[0,1], L=lambda
+            float y = UnityEngine.Random.value;
+            return -Mathf.Log(1f - y) / eventRate;
+        }
+        public static float        SampleVariability    (this float avg, float var)
+        {
+            Debug.Assert(var >= 0f && var <= 1f);
+            return avg * UnityEngine.Random.Range(1f - var, 1f + var);
         }
 
 
@@ -768,6 +796,72 @@ namespace sxg
             {
                 dictionary.Remove(key);
             }
+        }
+        public static void         AddSorted<T>         (this List<T> list, T item, IComparer<T> comparer)
+        {
+            if (list.Count == 0)
+            {
+                list.Add(item);
+            }
+            else if (comparer.Compare(list[list.Count - 1], item) <= 0)
+            {
+                list.Add(item);
+            }
+            else if (comparer.Compare(list[0], item) >= 0)
+            {
+                list.Insert(0, item);
+            }
+            else
+            {
+                int index = list.BinarySearch(item, comparer);
+                if (index < 0)
+                    index = ~index;
+                list.Insert(index, item);
+            }
+        }
+        public static void         ForeachPair<T>       (this List<T> list, System.Action<T, T> action)
+        {
+            if (list == null || action == null)
+                return;
+            for (int i = 0; i < list.Count; ++i)
+            {
+                for (int j = i+1; j < list.Count; ++j)
+                {
+                    action(list[i], list[j]);
+                }
+            }
+        }
+        public static void         ForeachPair<T>       (this List<T> list1, List<T> list2, System.Action<T, T> action)
+        {
+            if (list1 == null || list2 == null || action == null)
+                return;
+            for (int i = 0; i < list1.Count; ++i)
+            {
+                for (int j = 0; j < list2.Count; ++j)
+                {
+                    action(list1[i], list2[j]);
+                }
+            }
+        }
+        public static void         Shuffle<T>           (this IList<T> list, System.Random prng = null)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = prng != null ? prng.Next(n + 1) : UnityEngine.Random.Range(0, n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
+            }
+        }
+        public static T            Pop<T>               (this IList<T> list)
+        {
+            if (list.Count == 0)
+                return default(T);
+            T ans = list[list.Count - 1];
+            list.RemoveAt(list.Count - 1);
+            return ans;
         }
 
 
@@ -1057,24 +1151,34 @@ namespace sxg
                 GameObject.DestroyImmediate(transform.GetChild(i).gameObject);
             }
         }
-        public static void         SortChildren         (this Transform transform, bool recursive = false)
+        public static void         SortChildren         (this Transform transform, bool recursive = false, Comparison<Transform> comparison = null)
         {
             // PURPOSE: Sorts the children of the given gameobject by name
+            if (comparison == null)
+                comparison = (t1, t2) => t1.name.CompareTo(t2.name);
             Transform[] ts = new Transform[transform.childCount];
             for (int i = 0; i < transform.childCount; i++)
             {
                 ts[i] = transform.GetChild(i);
                 if (recursive)
                 {
-                    SortChildren(ts[i], recursive);
+                    SortChildren(ts[i], true, comparison);
                 }
             }
-            System.Array.Sort(ts, (t1, t2) => (t1.name.CompareTo(t2.name))); // transform.name == transform.gameobject.name
+            System.Array.Sort(ts, comparison);
 
             for (int i = 0; i < ts.Length; i++)
             {
                 ts[i].SetSiblingIndex(i);
             }
+        }
+        public static void         SortChildrenByVolume (this Transform transform)
+        {
+            float Volume(Transform t)
+            {
+                return t.GetComponentInChildren<MeshRenderer>()?.localBounds.Volume() ?? 0f;
+            }
+            SortChildren(transform, false, (t1, t2) => Volume(t1).CompareTo(Volume(t2)));
         }
         public static void         PrintChildren        (this Transform transform, StringBuilder sb, bool recursive = true, int depth = 0)
         {
@@ -1163,6 +1267,17 @@ namespace sxg
                 }
             }
         }
+        public static void         ForeachChild         (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
+        {
+            if (transform == null || action == null)
+                return;
+            if (includeSelf) action(transform);
+
+            for (int i=0; i<transform.childCount; ++i)
+            {
+                action(transform.GetChild(i));
+            }
+        }
         public static void         CopyPositionRotation (this Transform transform, Transform other)
         {
             if (transform == null || other == null) return;
@@ -1204,6 +1319,50 @@ namespace sxg
         public static Quaternion   ToWorld              (this Transform transform, Quaternion q)
         {
             return transform.rotation * q;
+        }
+        public static void         SplayChildren        (this Transform transform, float splayAmount, int splayRow = -1)
+        {
+            int splayCount = splayRow > 0 ? splayRow : Mathf.RoundToInt(Mathf.Sqrt(transform.childCount));
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform t = transform.GetChild(i);
+                t.localRotation = Quaternion.identity;
+                t.localPosition = new Vector3(i % splayCount, 0, i / splayCount) * splayAmount;
+            }
+        }
+
+
+        ////////////////////////// RIGIDBODY ////////////////////////////////
+        public static void         AddVelocity          (this Rigidbody rb, Vector3 velocity)
+        {
+            rb.AddForce(velocity, ForceMode.VelocityChange);
+        }
+        public static void         AddAcceleration      (this Rigidbody rb, Vector3 acceleration)
+        {
+            rb.AddForce(acceleration, ForceMode.Acceleration);
+        }
+        public static void         AddAccelerationMaxVelocity(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
+        {
+            float speedDelta = maxVelocity - rb.velocity.magnitude;
+            if (speedDelta > 0f)
+            {
+                float maxAccForVel = speedDelta / Time.deltaTime;
+                if (acceleration.sqrMagnitude > maxAccForVel*maxAccForVel)
+                {
+                    acceleration = acceleration.normalized * maxAccForVel;
+                }
+                rb.AddForce(acceleration, ForceMode.Acceleration);
+            }
+        }
+        public static void         Brake                (this Rigidbody rb, float breakAcc)
+        {
+            if (rb.velocity.magnitude > 0.0001f)
+            {
+                float maxAccNeeded = rb.velocity.magnitude / Time.fixedDeltaTime;
+                //acceleration += -velocity.normalized * maxAcceleration;//Mathf.Min(maxAccNeeded, breakAcc);
+                rb.AddAcceleration(-rb.velocity.normalized * Mathf.Min(maxAccNeeded, breakAcc));
+                //rb.AddAcceleration(-rb.velocity.normalized * breakAcc);
+            }
         }
 
 
@@ -1405,11 +1564,15 @@ namespace sxg
 
 
         ////////////////////////// GAMEOBJECT / COMPONENT ////////////////////////////////
-        public static void         Bind<T>              (this Component mb, out T result, bool includeChildren = true, bool canBeNull = false) where T : Component
+        public static void         Bind<T>              (this Component mb, out T result, bool includeChildren = true, bool canBeNull = false, bool includeParent = false) where T : Component
         {
             if (includeChildren)
             {
                 result = mb.GetComponentInChildren<T>();
+            }
+            else if (includeParent)
+            {
+                result = mb.GetComponentInParent<T>();
             }
             else
             {
@@ -1421,7 +1584,7 @@ namespace sxg
                 Debug.Assert(result != null, $"{mb.gameObject.name} expects a {typeof(T)}");
             }
         }
-        public static T[]          BindChildren<T>      (GameObject o) where T : Component
+        public static T[]          BindChildren<T>      (this GameObject o) where T : Component
         {
             List<T> result = new();
             for (int i = 0; i < o.transform.childCount; i++)
@@ -1443,6 +1606,10 @@ namespace sxg
         public static void         BindHere<T>          (this MonoBehaviour mb, out T result) where T : Component
         {
             mb.Bind(out result, includeChildren: false);
+        }
+        public static void         BindParent<T>        (this MonoBehaviour mb, out T result) where T : Component
+        {
+            mb.Bind(out result, includeChildren: false, includeParent: true);
         }
         public static void         BindAll<T>           (this Component mb, out T[] results, bool includeChildren = true, bool canBeNull = false) where T : Component
         {
@@ -1545,6 +1712,27 @@ namespace sxg
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(obj);
 #endif
+        }
+        public static void         SyncChildren<T, U>   (IEnumerable<T> list, Transform parent, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
+        {
+            int i = 0;
+            foreach (T element in list)
+            {
+                if (i >= parent.childCount)
+                {
+                    U newPrefab = GameObject.Instantiate(prefab, parent) as U;
+                    if (init != null)
+                        init(newPrefab);
+                }
+                Transform t = parent.GetChild(i) as Transform;
+                t.gameObject.SetActive(true);
+                action(element, t.GetComponent<U>());
+                ++i;
+            }
+            for (; i < parent.childCount; ++i)
+            {
+                parent.GetChild(i).gameObject.SetActive(false);
+            }
         }
 
 
@@ -1680,6 +1868,29 @@ namespace sxg
                 Mathf.PerlinNoise(t + 59.17f, 44.66f),
                 Mathf.PerlinNoise(t + 95.41f, 19.96f)) * 2f - Vector3.one;
         }
+        public static float        Noise01              (Vector2 point, int seed = 0, float scale = 1f, int octaves = 1)
+        {
+            return Mathf.Clamp01(Noise11(point, seed, scale, octaves) / 2f + 0.5f);
+        }
+        public static float        Noise11              (Vector2 point, int seed = 0, float scale = 1f, int octaves = 1)
+        {
+            //Vector2 offset = Vector2.zero;// new Vector2(seed ^ 0xDD71C, seed ^ 0x359F9);
+            float ans = 0f;
+            float m = 1f;
+            Vector2 offset = Vector2.zero;
+            //UnityEngine.Random.InitState(seed);
+            //offset = new Vector2(seed^0x44279, seed^ 0xCB81);
+            //Vector2 offset = new Vector2(UnityEngine.Random.value * 1e10f, UnityEngine.Random.value * 1e10f);
+            for (int i = 0; i < octaves; ++i)
+            {
+                //Vector2 offset = new Vector2(seed, seed ^ 0xC9EFB81);
+                //seed = nextRand(seed);
+                Vector2 p = (point) / scale * m + offset;
+                ans += (Mathf.PerlinNoise(p.x, p.y)*2f-1f) / m;
+                m *= 2;
+            }
+            return ans;
+        }
 
 
         ////////////////////////// POLYGONCOLLIDER ////////////////////////////////
@@ -1761,6 +1972,6 @@ namespace sxg
 #endif // UNITY_EDITOR
         }
 
-
     }
+
 }

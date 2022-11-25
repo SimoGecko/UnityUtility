@@ -88,16 +88,51 @@ namespace sxg
         public string Tooltip { get; private set; }
     }
 
-    [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
-    public class EditorButton : Editor
+    [System.AttributeUsage(System.AttributeTargets.Class)]
+    public class TabHierarchyAttribute : PropertyAttribute
     {
+    }
+
+    [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
+    public class MyMonoBehaviourEditor : Editor
+    {
+        int tabIndex = 0;
+
         public override void OnInspectorGUI()
         {
-            base.OnInspectorGUI();
-
             var mono = target as MonoBehaviour;
+            if (Attribute.GetCustomAttribute(mono.GetType(), typeof(TabHierarchyAttribute), true) == null)
+            {
+                base.OnInspectorGUI();
+                DrawButtonsForType(mono.GetType(), mono);
+            }
+            else
+            {
+                List<Type> types = GetTypesOf(mono.GetType());
+                tabIndex = GUILayout.Toolbar(tabIndex, types.Select(t => t.Name).ToArray());
+                //EditorGUILayout.BeginVertical();
+                //tabsSelected = GUILayout.SelectionGrid(tabsSelected, tabs, 2); // shows a grid
+                //EditorGUILayout.EndVertical();
+
+                Type type = types[tabIndex];
+                var members = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+                foreach(var member in members)
+                {
+                    var property = (serializedObject).FindProperty(member.Name);
+                    if (property != null)
+                    {
+                        EditorGUILayout.PropertyField(property);
+                    }
+                }
+                serializedObject.ApplyModifiedProperties();
+                DrawButtonsForType(type, mono);
+            }
+        }
+
+        void DrawButtonsForType(Type type, MonoBehaviour mono)
+        {
             //var methods = typeof(MonoBehaviour) // base
-            var methods = mono.GetType() // derived
+            var methods = type // derived
                 .GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(o => Attribute.IsDefined(o, typeof(EditorButtonAttribute)));
 
@@ -124,6 +159,18 @@ namespace sxg
             }
         }
 
+        List<Type> GetTypesOf(Type type)
+        {
+            List<Type> ans = new();
+            while (type != typeof(MonoBehaviour))
+            {
+                ans.Add(type);
+                type = type.BaseType;
+            }
+            ans.Reverse();
+            return ans;
+        }
+
         string Prettify(string methodName)
         {
             // Check that is starts with EDITOR_
@@ -133,7 +180,7 @@ namespace sxg
             }
             else
             {
-                Debug.LogWarning($"Editor method {methodName} should start with EDITOR_");
+                //Debug.LogWarning($"Editor method {methodName} should start with EDITOR_");
             }
             return Utility.AddSpacesBeforeCapitalLetters(methodName);
         }
@@ -153,6 +200,9 @@ namespace sxg
     {
     }
     public class EditorButtonAttribute : Attribute
+    {
+    }
+    public class TabHierarchyAttribute : Attribute
     {
     }
 
