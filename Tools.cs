@@ -74,7 +74,17 @@ namespace sxg
             foreach (GameObject go in Selection.gameObjects)
             {
                 StringBuilder sb = new();
-                Utility.PrintChildren(go.transform, sb);
+                Utility.PrintChildren(go.transform, sb, false);
+                Debug.Log(sb.ToString());
+            }
+        }
+        [MenuItem("Tools/Print Descendants")]
+        public static void PrintDescendants()
+        {
+            foreach (GameObject go in Selection.gameObjects)
+            {
+                StringBuilder sb = new();
+                Utility.PrintChildren(go.transform, sb, true);
                 Debug.Log(sb.ToString());
             }
         }

@@ -96,7 +96,8 @@ namespace sxg
     [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
     public class MyMonoBehaviourEditor : Editor
     {
-        int tabIndex = 0;
+        static int tabIndex = 0;
+        static UnityEngine.Object obj;
 
         public override void OnInspectorGUI()
         {
@@ -108,13 +109,19 @@ namespace sxg
             }
             else
             {
+                GUI.enabled = false;
+                EditorGUILayout.ObjectField("Script", MonoScript.FromMonoBehaviour(mono), mono.GetType(), false);
+                GUI.enabled = true;
+
                 List<Type> types = GetTypesOf(mono.GetType());
+                tabIndex = Mathf.Clamp(tabIndex, 0, types.Count);
                 tabIndex = GUILayout.Toolbar(tabIndex, types.Select(t => t.Name).ToArray());
                 //EditorGUILayout.BeginVertical();
                 //tabsSelected = GUILayout.SelectionGrid(tabsSelected, tabs, 2); // shows a grid
                 //EditorGUILayout.EndVertical();
 
                 Type type = types[tabIndex];
+
                 var members = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
                 foreach(var member in members)
                 {

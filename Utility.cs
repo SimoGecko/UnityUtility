@@ -180,6 +180,18 @@ namespace sxg
         {
             return Mathf.Ceil(value / amount) * amount;
         }
+        public static int          Round                (int value, int amount)
+        {
+            return Mathf.RoundToInt(value / amount) * amount;
+        }
+        public static int          RoundDown            (int value, int amount)
+        {
+            return Mathf.FloorToInt(value / amount) * amount;
+        }
+        public static int          RoundUp              (int value, int amount)
+        {
+            return Mathf.CeilToInt(value / amount) * amount;
+        }
 
         public static float        Clean                (float value, float amount, float eps)
         {
@@ -358,16 +370,6 @@ namespace sxg
         public static Vector3Int   To3                  (this Vector2Int vector)
         {
             return new Vector3Int(vector.x, 0, vector.y);
-        }
-        public static float        Min                  (this Vector2 vector)
-        {
-            Debug.Assert(vector.x <= vector.y);
-            return vector.x;
-        }
-        public static float        Max                  (this Vector2 vector)
-        {
-            Debug.Assert(vector.x <= vector.y);
-            return vector.y;
         }
         public static Vector2      ToV2                 (this Direction direction)
         {
@@ -872,6 +874,20 @@ namespace sxg
             list.RemoveAt(list.Count - 1);
             return ans;
         }
+        public static void         InsertionSort<T>     (this IList<T> arr, IComparer<T> comparer)
+        {
+            for (int i = 1; i < arr.Count; ++i)
+            {
+                T key = arr[i];
+                int j = i - 1;
+                while (j >= 0 && comparer.Compare(key, arr[j]) < 0)
+                {
+                    arr[j + 1] = arr[j];
+                    --j;
+                }
+                arr[j + 1] = key;
+            }
+        }
 
 
         ////////////////////////// GEOMETRY ////////////////////////////////
@@ -941,6 +957,10 @@ namespace sxg
             }
             Debug.Assert(false, "The rays don't intersect");
             return Vector2.zero;
+        }
+        public static bool         Intersect            (Ray2D r0, Ray2D r1, out Vector2 output)
+        {
+            return FindSegmentIntersection(r0.origin, r0.GetPoint(10000f), r1.origin, r1.GetPoint(10000f), out output);
         }
         public static Vector2      FindIntersectionPointWithOffset(Vector2 p0, Vector2 p1, Vector2 p2, float offset)
         {
@@ -1114,6 +1134,21 @@ namespace sxg
         {
             return System.Enum.GetNames(typeof(Enum));
         }
+        public static T            RandomEnumValue<T>   ()
+        {
+            var v = Enum.GetValues(typeof(T));
+            return (T)v.GetValue(UnityEngine.Random.Range(0, v.Length));
+        }
+        public static T[] EnumValues<T>()
+        {
+            var v = Enum.GetValues(typeof(T));
+            T[] ans = new T[v.Length];
+            for (int i = 0; i < v.Length; i++)
+            {
+                ans[i] = (T)v.GetValue(i);
+            }
+            return ans;
+        }
 
 
         ////////////////////////// TRANSFORM ////////////////////////////////
@@ -1192,16 +1227,18 @@ namespace sxg
         public static void         PrintChildren        (this Transform transform, StringBuilder sb, bool recursive = true, int depth = 0)
         {
             // PURPOSE: prints the children of the given gameobject by name
-            sb.Append(new string('\t', depth));
-            sb.Append(transform.gameObject.name);
-            sb.Append('\n');
-
+            if (depth == 0)
+            {
+                sb.Append($"{new string('\t', depth)}{transform.gameObject.name}\n");
+            }
+            ++depth;
             for (int i = 0; i < transform.childCount; i++)
             {
                 Transform child = transform.GetChild(i);
+                sb.Append($"{new string('\t', depth)}{child.gameObject.name}\n");
                 if (recursive)
                 {
-                    PrintChildren(child, sb, recursive, depth+1);
+                    PrintChildren(child, sb, recursive, depth);
                 }
             }
         }
@@ -1339,11 +1376,86 @@ namespace sxg
                 t.localPosition = new Vector3(i % splayCount, 0, i / splayCount) * splayAmount;
             }
         }
+        public static int          Depth                (this Transform transform, Transform ancestor)
+        {
+            int depth = 0;
+            while (transform != null && transform != ancestor)
+            {
+                ++depth;
+                transform = transform.parent;
+            }
+            return transform == ancestor ? depth : -1;
+        }
+        public static Bounds       CombinedBounds       (this Transform transform)
+        {
+            MeshRenderer[] mrs = transform.GetComponentsInChildren<MeshRenderer>();
+            if (mrs.IsNullOrEmpty())
+            {
+                return new Bounds();
+            }
+            else
+            {
+                Matrix4x4 m = transform.localToWorldMatrix;
+                Bounds b = new Bounds();
+                for (int i = 0; i < mrs.Length; i++)
+                {
+                    Matrix4x4 m2 = mrs[i].transform.localToWorldMatrix;
+                    Matrix4x4 m3 = m.inverse * m2;
+                    Bounds localBounds = mrs[i].localBounds;
+                    for (int j = 0; j < 8; j++)
+                    {
+                        Vector3 localcorner = localBounds.GetCorner(j);
+                        Vector3 worldcorner = m3.MultiplyPoint3x4(localcorner);
+                        if (i == 0 && j == 0)
+                        {
+                            b = new Bounds(worldcorner, Vector3.zero);
+                        }
+                        else
+                        {
+                            b.Encapsulate(worldcorner);
+                        }
+                    }
+                }
+                return b;
+            }
+        }
+        public static Vector3      GetCorner            (this Bounds b, int index)
+        {
+            Vector3 x = new Vector3((index & 1), (index >> 1) & 1, (index >> 2) & 1);
+            return b.min + b.size.Mult(x);
+        }
+        public static T Find<T>                         (this Transform transform, string nameOrPath)
+        {
+            Transform t = transform.Find(nameOrPath);
+            if (t != null)
+                return t.GetComponent<T>();
+            return default(T);
+        }
+
+
+        ////////////////////////// RECTTRANSFORM ////////////////////////////////
+        public static Rect         GetWorldRect         (this RectTransform rt)
+        {
+            Vector3[] corners = new Vector3[4];
+            rt.GetWorldCorners(corners);
+            Vector2 center = (corners[0] + corners[1] + corners[2] + corners[3]) / 4f;
+            float minX = Mathf.Min(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+            float maxX = Mathf.Max(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
+            float minY = Mathf.Min(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+            float maxY = Mathf.Max(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
+            Vector2 size = new Vector2(maxX - minX, maxY - minY);
+            return new Rect(center - size / 2f, size);
+        }
 
 
         ////////////////////////// RIGIDBODY ////////////////////////////////
         public static void         AddVelocity          (this Rigidbody rb, Vector3 velocity)
         {
+            rb.AddForce(velocity, ForceMode.VelocityChange);
+        }
+        public static void         SetVelocity          (this Rigidbody rb, Vector3 velocity)
+        {
+            rb.velocity = Vector3.zero;
             rb.AddForce(velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody rb, Vector3 acceleration)
@@ -1372,6 +1484,103 @@ namespace sxg
                 rb.AddAcceleration(-rb.velocity.normalized * Mathf.Min(maxAccNeeded, breakAcc));
                 //rb.AddAcceleration(-rb.velocity.normalized * breakAcc);
             }
+        }
+
+
+        ////////////////////////// RIGIDBODY 2D ////////////////////////////////
+
+        public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
+        {
+            switch (mode)
+            {
+            case ForceMode.Force:
+                rb.AddForce(force);
+                break;
+            case ForceMode.Impulse:
+                rb.AddForce(force / Time.fixedDeltaTime);
+                break;
+            case ForceMode.Acceleration:
+                rb.AddForce(force * rb.mass);
+                break;
+            case ForceMode.VelocityChange:
+                rb.AddForce(force * rb.mass / Time.fixedDeltaTime);
+                break;
+            }
+        }
+        public static void         AddRelativeForce     (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
+        {
+            switch (mode)
+            {
+            case ForceMode.Force:
+                rb.AddRelativeForce(force);
+                break;
+            case ForceMode.Impulse:
+                rb.AddRelativeForce(force / Time.fixedDeltaTime);
+                break;
+            case ForceMode.Acceleration:
+                rb.AddRelativeForce(force * rb.mass);
+                break;
+            case ForceMode.VelocityChange:
+                rb.AddRelativeForce(force * rb.mass / Time.fixedDeltaTime);
+                break;
+            }
+        }
+        public static void         AddTorque            (this Rigidbody2D rb, float torque, ForceMode mode = ForceMode.Force)
+        {
+            switch (mode)
+            {
+            case ForceMode.Force:
+                rb.AddTorque(torque);
+                break;
+            case ForceMode.Impulse:
+                rb.AddTorque(torque / Time.fixedDeltaTime);
+                break;
+            case ForceMode.Acceleration:
+                rb.AddTorque(torque * rb.inertia);
+                break;
+            case ForceMode.VelocityChange:
+                //rb.AddTorque(torque * rb.inertia / Time.fixedDeltaTime);
+                rb.angularVelocity += torque;
+                break;
+            }
+        }
+        public static void         AddVelocity          (this Rigidbody2D rb, Vector2 velocity)
+        {
+            rb.velocity += velocity;
+        }
+        public static void         SetVelocity          (this Rigidbody2D rb, Vector2 velocity)
+        {
+            rb.velocity = velocity;
+        }
+        public static void         AddAcceleration      (this Rigidbody2D rb, Vector2 acceleration)
+        {
+            rb.AddForce(acceleration * rb.mass);
+        }
+        public static void         AddRelativeAcceleration(this Rigidbody2D rb, Vector2 acceleration)
+        {
+            rb.AddRelativeForce(acceleration * rb.mass);
+        }
+        public static void         AddTorqueToReachRotation(this Rigidbody2D rb, float targetRotation, float maxTorque)
+        {
+            float deltaAngle = Mathf.DeltaAngle(rb.rotation, targetRotation); // todo: ensure in [-180, 180
+            float torque = Math.Clamp(deltaAngle, -maxTorque, maxTorque);
+            rb.AddTorque(torque, ForceMode2D.Force);
+        }
+        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime(float velocityMax, float timeToVelocityMax)
+        {
+            float v = velocityMax;
+            float T = timeToVelocityMax;
+            float t = Time.fixedDeltaTime;
+            float p = 0.99f; // the percentage of maxv to consider it reached, e.g. 99%
+
+            float d = (1f - Mathf.Exp(Mathf.Log(1f - p) * t / T)) / t;
+            float a = v * d;
+            return (a, d);
+        }
+        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
+        {
+            rb.velocity = other.velocity;
+            rb.angularVelocity = other.angularVelocity;
         }
 
 
@@ -1408,7 +1617,7 @@ namespace sxg
                 return string.Format("{0:D1}:{1:D2}", ts.Minutes, ts.Seconds);
             }
         }
-        public static string       FormatTimestamp      (this DateTime value)
+        public static string       FormatTimestamp      (this DateTime value, string format = null)
         {
             const string timestampFormat = "yyyy-MM-dd_HH:mm:ss";
             return value.ToString(timestampFormat);
@@ -1537,10 +1746,10 @@ namespace sxg
         ////////////////////////// ROUTINE / INVOKE ////////////////////////////////
         public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f)
         {
+            function(0f);
             yield return new WaitForSeconds(delay);
             float speed = 1f / duration;
             float percent = 0f;
-            function(0f);
             while (percent < 1f)
             {
                 percent += Time.deltaTime * speed;
@@ -1732,7 +1941,7 @@ namespace sxg
             }
             return path;
         }
-        public static void         SyncChildren<T, U>   (IEnumerable<T> list, Transform parent, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
+        public static void         SyncChildrenInstantiate<T, U>(IEnumerable<T> list, Transform parent, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
         {
             int i = 0;
             foreach (T element in list)
@@ -1753,6 +1962,32 @@ namespace sxg
                 parent.GetChild(i).gameObject.SetActive(false);
             }
         }
+        public static void         SyncChildrenInstantiate<T, U>(IEnumerable<T> list, Transform parent, Action<T, U> action, Action<U> init = null) where U : Component
+        {
+            int i = 1;
+            Debug.Assert(parent.childCount >= 1);
+            Debug.Assert(list != null);
+            parent.GetChild(0).gameObject.SetActive(false);
+            foreach (T element in list)
+            {
+                if (i >= parent.childCount)
+                {
+                    U prefab = parent.GetChild(0).GetComponentInChildren<U>();
+                    U newPrefab = GameObject.Instantiate(prefab, parent) as U;
+                    if (init != null)
+                        init(newPrefab);
+                }
+                Transform t = parent.GetChild(i) as Transform;
+                t.gameObject.SetActive(true);
+                action(element, t.GetComponent<U>());
+                ++i;
+            }
+            for (; i < parent.childCount; ++i)
+            {
+                parent.GetChild(i).gameObject.SetActive(false);
+            }
+        }
+
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
@@ -1804,6 +2039,15 @@ namespace sxg
             return $"#{value:X6}";
         }
 
+        public static Color        Hex2Color            (string hex)
+        {
+            if (hex.IsNullOrEmpty())
+                return Color.white;
+            if (hex[0] == '#')
+                hex = hex.Substring(1);
+            uint ans = Convert.ToUInt32(hex, 16);
+            return Hex2Color(ans);
+        }
         public static Color        Hex2Color            (uint hex)
         {
             byte r = (byte)((hex >> 16) & 0xff);
