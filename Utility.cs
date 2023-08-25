@@ -336,13 +336,17 @@ namespace sxg
         {
             float sin = Mathf.Sin(angleDegrees * Mathf.Deg2Rad);
             float cos = Mathf.Cos(angleDegrees * Mathf.Deg2Rad);
-
+            return Rotate(vector, sin, cos);
+        }
+        public static Vector2 Rotate(this Vector2 vector, float sin, float cos)
+        {
             float tx = vector.x;
             float ty = vector.y;
             vector.x = (cos * tx) - (sin * ty);
             vector.y = (sin * tx) + (cos * ty);
             return vector;
         }
+
         public static Vector2      Rotate90             (this Vector2 vector)
         {
             return new Vector2(-vector.y, vector.x);
@@ -1485,7 +1489,12 @@ namespace sxg
                 //rb.AddAcceleration(-rb.velocity.normalized * breakAcc);
             }
         }
-
+        public static void         AddRelativeForceAtPosition(this Rigidbody rb, Vector3 force, Vector3 position, ForceMode mode)
+        {
+            Vector3 forceW = rb.transform.TransformVector(force);
+            Vector3 posW = rb.transform.TransformPoint(position);
+            rb.AddForceAtPosition(forceW, posW, mode);
+        }
 
         ////////////////////////// RIGIDBODY 2D ////////////////////////////////
 
@@ -1941,7 +1950,11 @@ namespace sxg
             }
             return path;
         }
-        public static void         SyncChildrenInstantiate<T, U>(IEnumerable<T> list, Transform parent, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
+        public static void SyncChildrenInstantiate<T, U>(this Transform parent, IEnumerable<T> list, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
+        {
+            SyncChildrenInstantiate(list, parent, prefab, action, init);
+        }
+        public static void SyncChildrenInstantiate<T, U>(IEnumerable<T> list, Transform parent, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
         {
             int i = 0;
             foreach (T element in list)
@@ -1962,7 +1975,12 @@ namespace sxg
                 parent.GetChild(i).gameObject.SetActive(false);
             }
         }
-        public static void         SyncChildrenInstantiate<T, U>(IEnumerable<T> list, Transform parent, Action<T, U> action, Action<U> init = null) where U : Component
+
+        public static void SyncChildrenInstantiate<T, U>(this Transform parent, IEnumerable<T> list, Action<T, U> action, Action<U> init = null) where U : Component
+        {
+            SyncChildrenInstantiate(list, parent, action, init);
+        }
+        public static void SyncChildrenInstantiate<T, U>(IEnumerable<T> list, Transform parent, Action<T, U> action, Action<U> init = null) where U : Component
         {
             int i = 1;
             Debug.Assert(parent.childCount >= 1);
