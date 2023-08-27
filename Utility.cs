@@ -1435,6 +1435,24 @@ namespace sxg
                 return t.GetComponent<T>();
             return default(T);
         }
+        public static void         Set                  (this Transform transform, Transf transf)
+        {
+            transform.position = transf.pos;
+            transform.rotation = transf.rot;
+        }
+        public static void         SetLocal             (this Transform transform, Transf transf)
+        {
+            transform.localPosition = transf.pos;
+            transform.localRotation = transf.rot;
+        }
+        public static Transf       GetTransf            (this Transform transform)
+        {
+            return new(transform.position, transform.rotation);
+        }
+        public static Transf       GetTransfLocal       (this Transform transform)
+        {
+            return new(transform.localPosition, transform.localRotation);
+        }
 
 
         ////////////////////////// RECTTRANSFORM ////////////////////////////////
