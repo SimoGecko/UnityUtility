@@ -1,6 +1,7 @@
 // (c) Simone Guggiari 2022
 
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
 ////////// PURPOSE:  //////////
@@ -23,7 +24,7 @@ namespace sxg
     }
 
     ////////////////////////// TRANSF ////////////////////////////////
-    public struct Transf
+    public struct Transf : INetworkSerializable
     {
         public Vector3 pos;
         public Quaternion rot;
@@ -32,6 +33,12 @@ namespace sxg
         {
             this.pos = pos;
             this.rot = rot;
+        }
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref pos);
+            serializer.SerializeValue(ref rot);
         }
     }
 
@@ -228,8 +235,8 @@ namespace sxg
 
 
 
-////////////////////////// SMOOTH ////////////////////////////////
-[System.Serializable]
+    ////////////////////////// SMOOTH ////////////////////////////////
+    [System.Serializable]
     public struct Smooth<T>
     {
         [ReadOnly] [SerializeField] private T target;

@@ -168,6 +168,22 @@ namespace sxg
             }
         }
 
+        [MenuItem("Tools/Recalculate Skinned Mesh Bounds")]
+        public static void RecalcSkinnedBounds()
+        {
+            foreach (GameObject go in Selection.gameObjects)
+            {
+                SkinnedMeshRenderer sk = go.GetComponent<SkinnedMeshRenderer>();
+                Quaternion rot = Quaternion.Euler(-90f, 0f, 0f);
+                if (sk != null)
+                {
+                    //Transform t = sk.rootBone;
+                    Bounds b = sk.sharedMesh.bounds;
+                    sk.localBounds = new Bounds(rot * b.center, rot * b.size);
+                }
+            }
+        }
+
         //[MenuItem("Tools/FindReferences")]
         //public static void FindReferences()
         //{

@@ -10,6 +10,7 @@ using UnityEngine.UI;
 using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
+using UnityEngine.Events;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -24,6 +25,11 @@ namespace sxg
             if (instance == null) instance = FindObjectOfType<__TYPE__>();
             return instance;
         }
+    }
+
+    void OnDestroy()
+    {
+        instance = null;
     }
 
 
@@ -338,7 +344,7 @@ namespace sxg
             float cos = Mathf.Cos(angleDegrees * Mathf.Deg2Rad);
             return Rotate(vector, sin, cos);
         }
-        public static Vector2 Rotate(this Vector2 vector, float sin, float cos)
+        public static Vector2      Rotate               (this Vector2 vector, float sin, float cos)
         {
             float tx = vector.x;
             float ty = vector.y;
@@ -386,6 +392,10 @@ namespace sxg
             }
             Debug.LogWarning("Invalid direction");
             return Vector2.zero;
+        }
+        public static bool         IsNan                (this Vector2 vector)
+        {
+            return float.IsNaN(vector.x) || float.IsNaN(vector.y);
         }
 
 
@@ -439,6 +449,10 @@ namespace sxg
         public static Vector3      Div                  (this Vector3 a, Vector3 b)
         {
             return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+        }
+        public static bool         IsNan                (this Vector3 vector)
+        {
+            return float.IsNaN(vector.x) || float.IsNaN(vector.y) || float.IsNaN(vector.z);
         }
 
         public static Vector3      xAxis                => Vector3.right;
@@ -1428,7 +1442,7 @@ namespace sxg
             Vector3 x = new Vector3((index & 1), (index >> 1) & 1, (index >> 2) & 1);
             return b.min + b.size.Mult(x);
         }
-        public static T Find<T>                         (this Transform transform, string nameOrPath)
+        public static T            Find<T>              (this Transform transform, string nameOrPath)
         {
             Transform t = transform.Find(nameOrPath);
             if (t != null)
@@ -1771,7 +1785,7 @@ namespace sxg
 
 
         ////////////////////////// ROUTINE / INVOKE ////////////////////////////////
-        public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f)
+        public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f, Action endFunction = null)
         {
             function(0f);
             yield return new WaitForSeconds(delay);
@@ -1784,6 +1798,8 @@ namespace sxg
                 yield return null;
             }
             function(1f);
+            if (endFunction != null)
+                endFunction();
         }
         public static void         Invoke               (this MonoBehaviour mb, Action action, float delay)
         {
@@ -2002,21 +2018,23 @@ namespace sxg
         {
             int i = 1;
             Debug.Assert(parent.childCount >= 1);
-            Debug.Assert(list != null);
             parent.GetChild(0).gameObject.SetActive(false);
-            foreach (T element in list)
+            if (list != null)
             {
-                if (i >= parent.childCount)
+                foreach (T element in list)
                 {
-                    U prefab = parent.GetChild(0).GetComponentInChildren<U>();
-                    U newPrefab = GameObject.Instantiate(prefab, parent) as U;
-                    if (init != null)
-                        init(newPrefab);
+                    if (i >= parent.childCount)
+                    {
+                        U prefab = parent.GetChild(0).GetComponentInChildren<U>();
+                        U newPrefab = GameObject.Instantiate(prefab, parent) as U;
+                        if (init != null)
+                            init(newPrefab);
+                    }
+                    Transform t = parent.GetChild(i) as Transform;
+                    t.gameObject.SetActive(true);
+                    action(element, t.GetComponent<U>());
+                    ++i;
                 }
-                Transform t = parent.GetChild(i) as Transform;
-                t.gameObject.SetActive(true);
-                action(element, t.GetComponent<U>());
-                ++i;
             }
             for (; i < parent.childCount; ++i)
             {
@@ -2027,6 +2045,16 @@ namespace sxg
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
+        public static void SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
+        {
+            unityEvent.RemoveAllListeners();
+            unityEvent.AddListener(call);
+        }
+        public static void SetListener(this UnityEvent unityEvent, UnityAction call)
+        {
+            unityEvent.RemoveAllListeners();
+            unityEvent.AddListener(call);
+        }
 
 
         ////////////////////////// IMAGES ////////////////////////////////
