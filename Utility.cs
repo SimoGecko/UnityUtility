@@ -517,9 +517,32 @@ namespace sxg
             float angle = Mathf.Atan2(direction.y, direction.x);
             return Quaternion.Euler(-angle*Mathf.Rad2Deg, 90f, 0f);
         }
-        public static Quaternion   FromAngle2D      (this float angle)
+        public static Quaternion   FromAngle2D          (this float angle)
         {
             return Quaternion.Euler(-angle, 90f, 0f);
+        }
+
+
+        ////////////////////////// FUZZY MATH ////////////////////////////////
+        public static bool         FuzzyEq               (float a, float b)
+        {
+            //return Mathf.Approximately(a, b);
+            return Mathf.Abs(a - b) < 0.0001f;
+        }
+        public static bool         FuzzyEq               (this Vector2 v, Vector2 o)
+        {
+            return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y);
+        }
+        public static bool FuzzyEq(this Vector3 v, Vector3 o)
+        {
+            return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y) && FuzzyEq(v.z, o.z);
+        }
+        public static bool FuzzyEq(this Matrix4x4 m1, Matrix4x4 m2)
+        {
+            for (int i = 0; i < 16; ++i)
+                if (!FuzzyEq(m1[i], m2[i]))
+                    return false;
+            return true;
         }
 
 
@@ -910,6 +933,15 @@ namespace sxg
                 }
                 arr[j + 1] = key;
             }
+        }
+        public static V            GetOrInsert<K,V>     (this Dictionary<K,V> dictionary, K key) where V : new()
+        {
+            if (!dictionary.TryGetValue(key, out V value))
+            {
+                value = new();
+                dictionary[key] = value;
+            }
+            return value;
         }
 
 

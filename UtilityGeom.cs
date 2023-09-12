@@ -79,7 +79,7 @@ namespace sxg
         private Matrix4x4 projectionMatrix, localToWorldMatrix;
         private Plane[] planes;
 
-        public Frustum(float fov, float aspect, float near, float far, Transform transform, Camera cam)
+        public Frustum(float fov, float aspect, float near, float far, Transform transform)
         {
             this.fov = fov;
             this.aspect = aspect;
@@ -87,24 +87,22 @@ namespace sxg
             this.far = far;
 
             projectionMatrix = Matrix4x4.Perspective(fov, aspect, near, far);
+            localToWorldMatrix = Matrix4x4.identity;
+            planes = null;
+            Update(transform);
+        }
+
+        public void Update(Transform transform)
+        {
             localToWorldMatrix = transform.localToWorldMatrix;
+
             Matrix4x4 camMatrix = localToWorldMatrix.inverse;
             // from https://docs.unity3d.com/ScriptReference/Camera-worldToCameraMatrix.html:
             // Note that camera space matches OpenGL convention: camera's forward is the negative Z axis.
             // This is different from Unity's convention, where forward is the positive Z axis.
-            FlipZ(ref camMatrix);
+            camMatrix.SetRow(2, -camMatrix.GetRow(2));
             Matrix4x4 worldToProjectionMatrix = projectionMatrix * camMatrix;
             planes = GeometryUtility.CalculateFrustumPlanes(worldToProjectionMatrix);
-        }
-
-        static void FlipZ(ref Matrix4x4 matrix)
-        {
-            //Vector4 v = matrix.GetColumn(2);
-            //v = new Vector4(-v.x, -v.y, -v.z, v.w);
-            //matrix.SetColumn(2, v);
-            matrix.m20 *= -1f;
-            matrix.m21 *= -1f;
-            matrix.m22 *= -1f;
         }
 
         public bool Contains(Vector3 point)

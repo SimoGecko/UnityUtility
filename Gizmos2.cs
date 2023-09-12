@@ -188,10 +188,21 @@ namespace sxg
             //    DrawPlane(p);
         }
 
-        public static void DrawPlane(Plane p, float size = 10f)
+        public static void DrawPlane(Plane plane, float size = 10f)
         {
-            Vector3 o = p.GetOrigin();
-            Vector3 n = p.normal;
+            Vector3 o = plane.GetOrigin();
+            DrawPlaneHelper(plane, o, size);
+        }
+
+        public static void DrawPlane(Plane plane, Vector3 center, float size = 10f)
+        {
+            Vector3 o = plane.ClosestPointOnPlane(center);
+            DrawPlaneHelper(plane, o, size);
+        }
+
+        private static void DrawPlaneHelper(Plane plane, Vector3 o, float size)
+        {
+            Vector3 n = plane.normal;
             Gizmos.DrawLine(o, o + n);
 
             Gizmos.matrix = Matrix4x4.LookAt(o, o + n, Vector3.up);
