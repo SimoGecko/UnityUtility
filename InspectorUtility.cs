@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Reflection;
 using System;
 using System.Linq;
+using Unity.Netcode;
 //using Mvvm.Extensions;
 
 
@@ -93,11 +94,21 @@ namespace sxg
     {
     }
 
+    [CustomEditor(typeof(NetworkBehaviour), true), CanEditMultipleObjects]
+    public class MyNetworkBehaviourEditor : Editor
+    {
+        public override void OnInspectorGUI()
+        {
+            var mono = target as NetworkBehaviour;
+            base.OnInspectorGUI();
+            ButtonDrawerHelper.DrawButtonsForType(mono.GetType(), mono);
+        }
+    }
+
     [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
     public class MyMonoBehaviourEditor : Editor
     {
         static int tabIndex = 0;
-        static UnityEngine.Object obj;
 
         public override void OnInspectorGUI()
         {
@@ -105,7 +116,7 @@ namespace sxg
             if (Attribute.GetCustomAttribute(mono.GetType(), typeof(TabHierarchyAttribute), true) == null)
             {
                 base.OnInspectorGUI();
-                DrawButtonsForType(mono.GetType(), mono);
+                ButtonDrawerHelper.DrawButtonsForType(mono.GetType(), mono);
             }
             else
             {
@@ -132,11 +143,28 @@ namespace sxg
                     }
                 }
                 serializedObject.ApplyModifiedProperties();
-                DrawButtonsForType(type, mono);
+                ButtonDrawerHelper.DrawButtonsForType(type, mono);
             }
         }
 
-        void DrawButtonsForType(Type type, MonoBehaviour mono)
+        List<Type> GetTypesOf(Type type)
+        {
+            List<Type> ans = new();
+            while (type != typeof(MonoBehaviour))
+            {
+                ans.Add(type);
+                type = type.BaseType;
+            }
+            ans.Reverse();
+            return ans;
+        }
+
+
+    }
+
+    static class ButtonDrawerHelper
+    {
+        public static void DrawButtonsForType(Type type, MonoBehaviour mono)
         {
             //var methods = typeof(MonoBehaviour) // base
             var methods = type // derived
@@ -166,19 +194,7 @@ namespace sxg
             }
         }
 
-        List<Type> GetTypesOf(Type type)
-        {
-            List<Type> ans = new();
-            while (type != typeof(MonoBehaviour))
-            {
-                ans.Add(type);
-                type = type.BaseType;
-            }
-            ans.Reverse();
-            return ans;
-        }
-
-        string Prettify(string methodName)
+        public static string Prettify(string methodName)
         {
             // Check that is starts with EDITOR_
             if (methodName.StartsWith("EDITOR_"))
@@ -223,7 +239,7 @@ namespace sxg
             scale = new Vector3(f[6], f[7], f[8]);
             return true;
         }
-        [MenuItem("CONTEXT/Transform/Copy Local")]
+        //[MenuItem("CONTEXT/Transform/Copy Local")]
         public static void CopyLocal(MenuCommand command)
         {
             Transform t = (Transform)command.context;
@@ -235,7 +251,7 @@ namespace sxg
             Transform t = (Transform)command.context;
             GUIUtility.systemCopyBuffer = GetString(t.position, t.eulerAngles, t.lossyScale);
         }
-        [MenuItem("CONTEXT/Transform/Paste Local")]
+        //[MenuItem("CONTEXT/Transform/Paste Local")]
         public static void PasteLocal(MenuCommand command)
         {
             Transform t = (Transform)command.context;

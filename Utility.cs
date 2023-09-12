@@ -129,7 +129,12 @@ namespace sxg
         {
             return minInclusive <= value && value <= maxInclusive;
         }
-
+        public static float        InverseLerpUnclamped (float a, float b, float value)
+        {
+            if (a == b)
+                return 0f;
+            return (value - a) / (b - a);
+        }
 
         ////////////////////////// ANGLE ////////////////////////////////
         public static float        Canonicalize         (float angleDeg)
@@ -1470,6 +1475,13 @@ namespace sxg
 
 
         ////////////////////////// RECTTRANSFORM ////////////////////////////////
+        public static Vector3      GetOrigin(this Plane plane)
+        {
+            return -plane.normal * plane.distance;
+        }
+
+
+        ////////////////////////// RECTTRANSFORM ////////////////////////////////
         public static Rect         GetWorldRect         (this RectTransform rt)
         {
             Vector3[] corners = new Vector3[4];
@@ -1787,17 +1799,18 @@ namespace sxg
         ////////////////////////// ROUTINE / INVOKE ////////////////////////////////
         public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f, Action endFunction = null)
         {
-            function(0f);
-            yield return new WaitForSeconds(delay);
+            if (delay > 0f)
+                yield return new WaitForSeconds(delay);
             float speed = 1f / duration;
             float percent = 0f;
+            function(0f);
             while (percent < 1f)
             {
                 percent += Time.deltaTime * speed;
-                function(percent);
+                function(Mathf.Min(1f, percent));
                 yield return null;
             }
-            function(1f);
+            //function(1f);
             if (endFunction != null)
                 endFunction();
         }
@@ -1821,6 +1834,24 @@ namespace sxg
         {
             yield return new WaitForSeconds(delay);
             action();
+        }
+        public static IEnumerator  SimpleRoutineRealTime(Action<float> function, float duration, float delay = 0f, Action endFunction = null)
+        {
+            // copy of SimpleRoutine, uses real time
+            if (delay > 0f)
+                yield return new WaitForSecondsRealtime(delay);
+            float speed = 1f / duration;
+            float percent = 0f;
+            function(0f);
+            while (percent < 1f)
+            {
+                percent += Time.unscaledDeltaTime * speed;
+                function(Mathf.Min(1f, percent));
+                yield return null;
+            }
+            //function(1f);
+            if (endFunction != null)
+                endFunction();
         }
 
 
@@ -1984,6 +2015,7 @@ namespace sxg
             }
             return path;
         }
+        
         public static void SyncChildrenInstantiate<T, U>(this Transform parent, IEnumerable<T> list, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
         {
             SyncChildrenInstantiate(list, parent, prefab, action, init);
@@ -2009,7 +2041,6 @@ namespace sxg
                 parent.GetChild(i).gameObject.SetActive(false);
             }
         }
-
         public static void SyncChildrenInstantiate<T, U>(this Transform parent, IEnumerable<T> list, Action<T, U> action, Action<U> init = null) where U : Component
         {
             SyncChildrenInstantiate(list, parent, action, init);
@@ -2041,7 +2072,6 @@ namespace sxg
                 parent.GetChild(i).gameObject.SetActive(false);
             }
         }
-
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////

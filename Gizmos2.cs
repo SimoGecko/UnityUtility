@@ -132,11 +132,14 @@ namespace sxg
 
         public static void DrawPath         (params Vector3[] points)
         {
+            if (points == null)
+                return;
             for (int i = 0; i < points.Length-1; i++)
             {
                 Gizmos.DrawLine(points[i], points[i + 1]);
             }
-            Gizmos.DrawLine(points[^1], points[0]);
+            if (points.Length >= 2)
+                Gizmos.DrawLine(points[^1], points[0]);
         }
 
         public static void DrawTransform(this Transform transform, float scale = 0.1f, float alpha = 0.93f)
@@ -175,5 +178,25 @@ namespace sxg
             }
         }
 
+        public static void DrawFrustum(Frustum frustum)
+        {
+            Gizmos.matrix = frustum.Matrix;
+            Gizmos.DrawFrustum(Vector3.zero, frustum.Fov, frustum.Far, frustum.Near, frustum.Aspect);
+            Gizmos.matrix = Matrix4x4.identity;
+
+            //foreach (Plane p in frustum.Planes)
+            //    DrawPlane(p);
+        }
+
+        public static void DrawPlane(Plane p, float size = 10f)
+        {
+            Vector3 o = p.GetOrigin();
+            Vector3 n = p.normal;
+            Gizmos.DrawLine(o, o + n);
+
+            Gizmos.matrix = Matrix4x4.LookAt(o, o + n, Vector3.up);
+            Gizmos.DrawCube(Vector3.zero, new Vector3(1f, 1f, 0f) * size);
+            Gizmos.matrix = Matrix4x4.identity;
+        }
     }
 }

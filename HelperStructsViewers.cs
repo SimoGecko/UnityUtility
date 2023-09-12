@@ -16,18 +16,20 @@ namespace sxg
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
         {
             // Find the SerializedProperties by name
-            var p = property.FindPropertyRelative("proportionalGain");
-            var i = property.FindPropertyRelative("integralGain");
-            var d = property.FindPropertyRelative("derivativeGain");
+            var p = property.FindPropertyRelative("Kp");
+            var d = property.FindPropertyRelative("Kd");
+            var i = property.FindPropertyRelative("Ki");
+            var angle = property.FindPropertyRelative("isAngle");
 
             EditorGUI.BeginProperty(rect, label, property);
             {
                 Rect RectPart(Rect r, float min, float max) => new Rect(rect.GetPoint(min, 0f), new Vector2(rect.width * (max - min), rect.height));
                 EditorGUIUtility.labelWidth = 30;
                 EditorGUI.LabelField(RectPart(rect, 0f, 0.43f), label);
-                p.floatValue = EditorGUI.FloatField(RectPart(rect, 0.43f, 0.62f), "P", p.floatValue);
-                i.floatValue = EditorGUI.FloatField(RectPart(rect, 0.62f, 0.81f), "I", i.floatValue);
-                d.floatValue = EditorGUI.FloatField(RectPart(rect, 0.81f, 1.00f), "D", d.floatValue);
+                p.floatValue = EditorGUI.FloatField(RectPart(rect, 0.43f, 0.58f), "P", p.floatValue);
+                d.floatValue = EditorGUI.FloatField(RectPart(rect, 0.58f, 0.73f), "D", d.floatValue); // NOTE: the order PDI
+                i.floatValue = EditorGUI.FloatField(RectPart(rect, 0.73f, 0.88f), "I", i.floatValue);
+                angle.boolValue = EditorGUI.Toggle(RectPart(rect, 0.88f, 1.00f), "angle", angle.boolValue);
             }
             EditorGUI.EndProperty();
         }

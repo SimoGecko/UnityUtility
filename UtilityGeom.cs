@@ -71,5 +71,58 @@ namespace sxg
             return new Circle(Vector2.Lerp(a.center, b.center, t), Mathf.Lerp(a.radius, b.radius, t));
         }
     }
-    
+
+    [System.Serializable]
+    public struct Frustum
+    {
+        private float fov, aspect, near, far;
+        private Matrix4x4 projectionMatrix, localToWorldMatrix;
+        private Plane[] planes;
+
+        public Frustum(float fov, float aspect, float near, float far, Transform transform, Camera cam)
+        {
+            this.fov = fov;
+            this.aspect = aspect;
+            this.near = near;
+            this.far = far;
+
+            projectionMatrix = Matrix4x4.Perspective(fov, aspect, near, far);
+            localToWorldMatrix = transform.localToWorldMatrix;
+            Matrix4x4 camMatrix = localToWorldMatrix.inverse;
+            // from https://docs.unity3d.com/ScriptReference/Camera-worldToCameraMatrix.html:
+            // Note that camera space matches OpenGL convention: camera's forward is the negative Z axis.
+            // This is different from Unity's convention, where forward is the positive Z axis.
+            FlipZ(ref camMatrix);
+            Matrix4x4 worldToProjectionMatrix = projectionMatrix * camMatrix;
+            planes = GeometryUtility.CalculateFrustumPlanes(worldToProjectionMatrix);
+        }
+
+        static void FlipZ(ref Matrix4x4 matrix)
+        {
+            //Vector4 v = matrix.GetColumn(2);
+            //v = new Vector4(-v.x, -v.y, -v.z, v.w);
+            //matrix.SetColumn(2, v);
+            matrix.m20 *= -1f;
+            matrix.m21 *= -1f;
+            matrix.m22 *= -1f;
+        }
+
+        public bool Contains(Vector3 point)
+        {
+            foreach (Plane p in planes)
+            {
+                if (!p.GetSide(point))
+                    return false;
+            }
+            return true;
+        }
+
+        public Plane[] Planes => planes;
+        public float Fov => fov;
+        public float Aspect => aspect;
+        public float Near => near;
+        public float Far => far;
+        public Matrix4x4 Matrix => localToWorldMatrix;
+    }
+
 }

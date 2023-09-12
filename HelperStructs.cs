@@ -149,62 +149,82 @@ namespace sxg
     [System.Serializable]
     public struct PID//<T>
     {
-        [SerializeField] private float proportionalGain; // proportional
-        [SerializeField] private float integralGain; // integral
-        [SerializeField] private float derivativeGain; // derivative
-        //[SerializeField] float integralSaturation;
-        //[SerializeField] Range outputRange;
+        [SerializeField] private float Kp; // proportional
+        [SerializeField] private float Kd; // derivative
+        [SerializeField] private float Ki; // integral
+        //[SerializeField] float integralSaturation; // prevents wind-up
+        //[SerializeField] Range outputRange; // clamps the output of the system
+        [SerializeField] private bool isAngle;
 
-        float errorLast;
-        float valueLast;
+        float errorLast, valueLast;
         bool derivativeInitialized;
-        float integralStored;
+        float I;
 
-        enum DerivativeMeasurement { ErrorRateOfChange, Velocity }
+        enum DerivativeMeasurement { Velocity, ErrorRateOfChange } // Velocity removes the Derivative Kick
         DerivativeMeasurement derivativeMeasurement;
 
         public float Update(float currentValue, float targetValue, float dt)
         {
+            if (dt <= 0f)
+                return 0f;
+            float error = Difference(targetValue, currentValue);//targetValue - currentValue;
+
             // P (= spring)
-            float error = targetValue - currentValue;
-            float P = proportionalGain * error;
+            float P = error;
 
             // D (= dampener)
-            float errorRateOfChange = (error - errorLast) / dt;
-            errorLast = error;
-            float valueRateOfChange = (currentValue - valueLast) / dt;
-            valueLast = currentValue;
-            float deriveMeasure = 0f;
-
+            float D = 0f;
             if (derivativeInitialized)
             {
                 if (derivativeMeasurement == DerivativeMeasurement.Velocity)
-                    deriveMeasure = -valueRateOfChange;
+                {
+                    float valueRateOfChange = Difference(currentValue, valueLast) / dt;//(currentValue - valueLast) / dt;
+                    D = -valueRateOfChange;
+                }
                 else
-                    deriveMeasure = errorRateOfChange;
+                {
+                    float errorRateOfChange = Difference(error, errorLast) / dt;//(error - errorLast) / dt;
+                    D = errorRateOfChange;
+                }
             }
             else
             {
                 derivativeInitialized = true;
             }
+            valueLast = currentValue;
+            errorLast = error;
 
-            float D = derivativeGain * deriveMeasure;
 
             // I
-            integralStored += error * dt;
-            //integralStored = Mathf.Clamp(integralStored, -integralSaturation, integralSaturation);
-            float I = integralGain * integralStored;
-
+            I += error * dt;
+            //I = Mathf.Clamp(I, -integralSaturation, integralSaturation);
 
             // result
-            float result = P + I + D;
+            float result = Kp * P + Kd * D + Ki * I;
             //result = outputRange.Clamp(result);
             return result;
+        }
+
+        float Difference(float a, float b)
+        {
+            if (isAngle)
+                return AngleDifference(a, b);
+            else
+                return a - b;
         }
 
         public void Reset()
         {
             derivativeInitialized = false;
+        }
+
+        float AngleDifference(float a, float b) // provides the shortest angle. input=[0,360], output=[-180,180]
+        {
+            if (a < 0) a += 360f;
+            if (b < 0) b += 360f;
+            Debug.Assert(0 <= a && a <= 360f);
+            Debug.Assert(0 <= b && b <= 360f);
+            return (a - b + 540f) % 360f - 180f;
         }
     }
 
@@ -233,6 +253,28 @@ namespace sxg
 
     }
 
+    ////////////////////////// TIMED ////////////////////////////////
+    [System.Serializable]
+    public struct Throttler
+    {
+        [SerializeField] float timeBetween;
+        float nextTime;
+
+        public Throttler(float timeBetween) : this()
+        {
+            this.timeBetween = timeBetween;
+        }
+
+        public bool CanGo()
+        {
+            if (Time.time >= nextTime)
+            {
+                nextTime = Time.time + timeBetween;
+                return true;
+            }
+            return false;
+        }
+    }
 
 
     ////////////////////////// SMOOTH ////////////////////////////////
