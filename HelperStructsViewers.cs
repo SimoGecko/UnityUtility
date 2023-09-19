@@ -9,6 +9,15 @@ using UnityEditor;
 namespace sxg
 {
 
+    public static class RectHelper
+    {
+        public static Rect Part(this Rect r, float min, float max)
+        {
+            return new(r.GetPoint(min, 0f), new Vector2(r.width * (max - min), r.height));
+        }
+    }
+
+
 #if SEDITOR
     [CustomPropertyDrawer(typeof(PID))]
     public class PidDrawer : PropertyDrawer
@@ -23,13 +32,12 @@ namespace sxg
 
             EditorGUI.BeginProperty(rect, label, property);
             {
-                Rect RectPart(Rect r, float min, float max) => new Rect(rect.GetPoint(min, 0f), new Vector2(rect.width * (max - min), rect.height));
                 EditorGUIUtility.labelWidth = 30;
-                EditorGUI.LabelField(RectPart(rect, 0f, 0.43f), label);
-                p.floatValue = EditorGUI.FloatField(RectPart(rect, 0.43f, 0.58f), "P", p.floatValue);
-                d.floatValue = EditorGUI.FloatField(RectPart(rect, 0.58f, 0.73f), "D", d.floatValue); // NOTE: the order PDI
-                i.floatValue = EditorGUI.FloatField(RectPart(rect, 0.73f, 0.88f), "I", i.floatValue);
-                angle.boolValue = EditorGUI.Toggle(RectPart(rect, 0.88f, 1.00f), "angle", angle.boolValue);
+                EditorGUI.LabelField(rect.Part(0f, 0.43f), label);
+                p.floatValue = EditorGUI.FloatField(rect.Part(0.43f, 0.58f), "P", p.floatValue);
+                d.floatValue = EditorGUI.FloatField(rect.Part(0.58f, 0.73f), "D", d.floatValue); // NOTE: the order PDI
+                i.floatValue = EditorGUI.FloatField(rect.Part(0.73f, 0.88f), "I", i.floatValue);
+                angle.boolValue = EditorGUI.Toggle(rect.Part(0.88f, 1.00f), "angle", angle.boolValue);
             }
             EditorGUI.EndProperty();
         }
@@ -65,11 +73,10 @@ namespace sxg
                     EditorGUIUtility.wideMode = true;
                     EditorGUIUtility.labelWidth = EditorGUIUtility.currentViewWidth - 212;
                 }
-                Rect RectPart(Rect r, float min, float max) => new Rect(rect.GetPoint(min, 0f), new Vector2(rect.width * (max - min), rect.height));
                 EditorGUIUtility.labelWidth = 30;
-                EditorGUI.LabelField(RectPart(rect, 0f, 0.43f), label);
-                min.floatValue = EditorGUI.FloatField(RectPart(rect, 0.43f, 0.62f), "Min", min.floatValue);
-                max.floatValue = EditorGUI.FloatField(RectPart(rect, 0.62f, 0.81f), "Max", max.floatValue);
+                EditorGUI.LabelField(rect.Part(0f, 0.43f), label);
+                min.floatValue = EditorGUI.FloatField(rect.Part(0.43f, 0.62f), "Min", min.floatValue);
+                max.floatValue = EditorGUI.FloatField(rect.Part(0.62f, 0.81f), "Max", max.floatValue);
             }
             EditorGUI.EndProperty();
         }
@@ -87,14 +94,30 @@ namespace sxg
 
             EditorGUI.BeginProperty(rect, label, property);
             {
-                Rect RectPart(Rect r, float min, float max) => new Rect(rect.GetPoint(min, 0f), new Vector2(rect.width * (max - min), rect.height));
                 EditorGUIUtility.labelWidth = 40;
-                EditorGUI.LabelField(RectPart(rect, 0f, 0.43f), label);
-                time.floatValue = EditorGUI.FloatField(RectPart(rect, 0.43f, 0.62f), "Time", time.floatValue);
+                EditorGUI.LabelField(rect.Part(0f, 0.43f), label);
+                time.floatValue = EditorGUI.FloatField(rect.Part(0.43f, 0.62f), "Time", time.floatValue);
                 EditorGUI.BeginDisabledGroup(true);
-                EditorGUI.FloatField(RectPart(rect, 0.62f, 0.81f), "Target", target.floatValue);
-                EditorGUI.FloatField(RectPart(rect, 0.81f, 1.00f), "Value", value.floatValue);
+                EditorGUI.FloatField(rect.Part(0.62f, 0.81f), "Target", target.floatValue);
+                EditorGUI.FloatField(rect.Part(0.81f, 1.00f), "Value", value.floatValue);
                 EditorGUI.EndDisabledGroup();
+            }
+            EditorGUI.EndProperty();
+        }
+    }
+
+    [CustomPropertyDrawer(typeof(Throttler))]
+    public class ThrottlerDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
+        {
+            var timeBetween = property.FindPropertyRelative("timeBetween");
+
+            EditorGUI.BeginProperty(rect, label, property);
+            {
+                EditorGUIUtility.labelWidth = 80;
+                EditorGUI.LabelField(rect.Part(0f, 0.4f), label);
+                timeBetween.floatValue = EditorGUI.FloatField(rect.Part(0.4f, 1.0f), "timeBetween", timeBetween.floatValue);
             }
             EditorGUI.EndProperty();
         }

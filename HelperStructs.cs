@@ -161,13 +161,13 @@ namespace sxg
         float I;
 
         enum DerivativeMeasurement { Velocity, ErrorRateOfChange } // Velocity removes the Derivative Kick
-        DerivativeMeasurement derivativeMeasurement;
+        static readonly DerivativeMeasurement derivativeMeasurement = DerivativeMeasurement.Velocity;
 
         public float Update(float currentValue, float targetValue, float dt)
         {
             if (dt <= 0f)
                 return 0f;
-            float error = Difference(targetValue, currentValue);//targetValue - currentValue;
+            float error = Difference(targetValue, currentValue);
 
             // P (= spring)
             float P = error;
@@ -178,12 +178,12 @@ namespace sxg
             {
                 if (derivativeMeasurement == DerivativeMeasurement.Velocity)
                 {
-                    float valueRateOfChange = Difference(currentValue, valueLast) / dt;//(currentValue - valueLast) / dt;
+                    float valueRateOfChange = Difference(currentValue, valueLast) / dt;
                     D = -valueRateOfChange;
                 }
                 else
                 {
-                    float errorRateOfChange = Difference(error, errorLast) / dt;//(error - errorLast) / dt;
+                    float errorRateOfChange = Difference(error, errorLast) / dt;
                     D = errorRateOfChange;
                 }
             }

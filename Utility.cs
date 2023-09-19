@@ -402,6 +402,10 @@ namespace sxg
         {
             return float.IsNaN(vector.x) || float.IsNaN(vector.y);
         }
+        public static bool         IsWithin             (this Vector2 vector, Vector2 other, float dist)
+        {
+            return (vector - other).sqrMagnitude <= dist * dist;
+        }
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
@@ -458,6 +462,10 @@ namespace sxg
         public static bool         IsNan                (this Vector3 vector)
         {
             return float.IsNaN(vector.x) || float.IsNaN(vector.y) || float.IsNaN(vector.z);
+        }
+        public static bool         IsWithin             (this Vector3 vector, Vector3 other, float dist)
+        {
+            return (vector - other).sqrMagnitude <= dist * dist;
         }
 
         public static Vector3      xAxis                => Vector3.right;
@@ -628,11 +636,12 @@ namespace sxg
         {
             return Mathf.Max(0f, UnityEngine.Random.Range(average - deviation, average + deviation));
         }
-        public static float        SampleWaitTimePoisson(float eventRate)
+        public static float        SampleWaitTimePoisson(float avgEventWaitTime)
         {
+            // NOTES: this was previously taking eventRate, which is 1/avgEventWaitTime
             // exponential distribution CDF: L*exp(-L*x) => inverse: -ln(1-y)/L, y~[0,1], L=lambda
             float y = UnityEngine.Random.value;
-            return -Mathf.Log(1f - y) / eventRate;
+            return -Mathf.Log(y) * avgEventWaitTime;
         }
         public static float        SampleVariability    (this float avg, float var)
         {
@@ -1194,7 +1203,7 @@ namespace sxg
             var v = Enum.GetValues(typeof(T));
             return (T)v.GetValue(UnityEngine.Random.Range(0, v.Length));
         }
-        public static T[] EnumValues<T>()
+        public static T[]          EnumValues<T>()
         {
             var v = Enum.GetValues(typeof(T));
             T[] ans = new T[v.Length];
@@ -1203,6 +1212,17 @@ namespace sxg
                 ans[i] = (T)v.GetValue(i);
             }
             return ans;
+        }
+        public static T            ParseEnum<T>(this string value)
+        {
+            return (T)Enum.Parse(typeof(T), value);
+        }
+        public static T            Next<T>                            (this T enumValue) where T : Enum
+        {
+            int enumIntValue = Convert.ToInt32(enumValue);
+            int enumIntCount = Enum.GetValues(typeof(T)).Length;
+            enumIntValue = (enumIntValue + 1) % enumIntCount;
+            return (T)Enum.ToObject(typeof(T), enumIntValue);
         }
 
 

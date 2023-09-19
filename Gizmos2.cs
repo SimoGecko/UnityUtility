@@ -130,7 +130,7 @@ namespace sxg
 #endif
         }
 
-        public static void DrawPath         (params Vector3[] points)
+        public static void DrawPath         (Vector3[] points, bool closed = false)
         {
             if (points == null)
                 return;
@@ -138,7 +138,7 @@ namespace sxg
             {
                 Gizmos.DrawLine(points[i], points[i + 1]);
             }
-            if (points.Length >= 2)
+            if (closed && points.Length >= 2)
                 Gizmos.DrawLine(points[^1], points[0]);
         }
 
