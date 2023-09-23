@@ -1,4 +1,4 @@
-﻿// (c) Simone Guggiari 2020-2022
+﻿// (c) Simone Guggiari 2020-2023
 
 using System;
 using System.Collections.Generic;

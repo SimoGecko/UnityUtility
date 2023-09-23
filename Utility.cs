@@ -1,4 +1,4 @@
-﻿// (c) Simone Guggiari 2020-2022
+﻿// (c) Simone Guggiari 2020-2023
 
 using System;
 using System.Collections.Generic;
@@ -16,44 +16,6 @@ using UnityEngine.Events;
 
 namespace sxg
 {
-/*
-    private static __TYPE__ instance;
-    public static __TYPE__ Instance
-    {
-        get
-        {
-            if (instance == null) instance = FindObjectOfType<__TYPE__>();
-            return instance;
-        }
-    }
-
-    void OnDestroy()
-    {
-        instance = null;
-    }
-
-
-    [CustomEditor(typeof(__TYPE__))]
-    public class __TYPE__ Editor : Editor
-    {
-        private __TYPE__ myTarget;
-
-        private void OnEnable()
-        {
-            myTarget = (__TYPE__)target;
-        }
-
-        public override void OnInspectorGUI()
-        {
-            base.OnInspectorGUI();
-
-            // code
-        }
-    }
-*/
-
-    public enum Direction { Up, Left, Down, Right };
-
     // Naming: Get / Find / Compute / 
     public static partial class Utility
     {
@@ -385,18 +347,6 @@ namespace sxg
         public static Vector3Int   To3                  (this Vector2Int vector)
         {
             return new Vector3Int(vector.x, 0, vector.y);
-        }
-        public static Vector2      ToV2                 (this Direction direction)
-        {
-            switch (direction)
-            {
-            case Direction.Up:    return Vector2.up;
-            case Direction.Left:  return Vector2.left;
-            case Direction.Down:  return Vector2.down;
-            case Direction.Right: return Vector2.right;
-            }
-            Debug.LogWarning("Invalid direction");
-            return Vector2.zero;
         }
         public static bool         IsNan                (this Vector2 vector)
         {
@@ -951,6 +901,10 @@ namespace sxg
                 dictionary[key] = value;
             }
             return value;
+        }
+        public static IEnumerable<T> EmptyEnumerable<T> ()
+        {
+            return Enumerable.Empty<T>();
         }
 
 

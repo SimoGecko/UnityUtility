@@ -1,4 +1,4 @@
-// (c) Simone Guggiari 2022
+// (c) Simone Guggiari 2022-2023
 
 using System.Collections.Generic;
 using Unity.Netcode;
