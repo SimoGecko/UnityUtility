@@ -2461,6 +2461,18 @@ namespace sxg
             return Vector3.zero;
 #endif // (SEDITOR && UNITY_EDITOR)
         }
+        public static float        HorizontalFieldOfView(this Camera camera)
+        {
+            Debug.Assert(camera != null);
+            float angleRad = camera.fieldOfView * Mathf.Deg2Rad;
+            float fovHorizRad = 2f * Mathf.Atan(Mathf.Tan(angleRad / 2f) * camera.aspect);
+            return Mathf.Rad2Deg * fovHorizRad;
+        }
+        public static float VerticalFieldOfView(this Camera camera)
+        {
+            Debug.Assert(camera != null);
+            return camera.fieldOfView;
+        }
 
     }
 
