@@ -7,12 +7,7 @@ using System.Reflection;
 using System;
 using System.Linq;
 using Unity.Netcode;
-//using Mvvm.Extensions;
-
-
-#if (SEDITOR && UNITY_EDITOR)
 using UnityEditor;
-#endif
 
 ////////// DESCRIPTION //////////
 
@@ -44,6 +39,42 @@ namespace sxg
             GUI.enabled = false;
             EditorGUI.PropertyField(position, property, label, true);
             GUI.enabled = true;
+        }
+    }
+
+    [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
+    public sealed class RangeExAttribute : PropertyAttribute
+    {
+        public readonly float min;
+        public readonly float max;
+        public readonly float step;
+
+        public RangeExAttribute(float min, float max, float step)
+        {
+            this.min = min;
+            this.max = max;
+            this.step = step;
+        }
+    }
+
+    // from https://forum.unity.com/threads/range-attribute.451848/
+    [CustomPropertyDrawer(typeof(RangeExAttribute))]
+    public sealed class RangeExDrawer : PropertyDrawer
+    {
+        private float value;
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            var rangeAttribute = (RangeExAttribute)base.attribute;
+            if (property.propertyType == SerializedPropertyType.Float)
+            {
+                value = EditorGUI.Slider(position, label, property.floatValue, rangeAttribute.min, rangeAttribute.max);
+                value = Mathf.Round(value / rangeAttribute.step) * rangeAttribute.step;
+                property.floatValue = value;
+            }
+            else
+            {
+                EditorGUI.LabelField(position, label.text, "Use Range with float.");
+            }
         }
     }
 
@@ -298,9 +329,18 @@ namespace sxg
     }
     public class EditorButtonAttribute : Attribute
     {
+        public EditorButtonAttribute(string _ = "", string _2 = "")
+        {
+        }
     }
     public class TabHierarchyAttribute : Attribute
     {
+    }
+    public class RangeExAttribute : PropertyAttribute
+    {
+        public RangeExAttribute(float min, float max, float step)
+        {
+        }
     }
 
 #endif

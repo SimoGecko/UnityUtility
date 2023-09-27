@@ -1,6 +1,5 @@
 ﻿// (c) Simone Guggiari 2020-2023
 
-using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Text;
@@ -247,6 +246,16 @@ namespace sxg
                 Debug.Log("Need to select 2 objects to measure the distance");
             float dist = Vector3.Distance(Selection.gameObjects[0].transform.position, Selection.gameObjects[1].transform.position);
             Debug.Log($"Distance={dist}");
+        }
+
+        [MenuItem("Tools/Find Network Objects")]
+        public static void FindNetworkObjects()
+        {
+            NetworkObject[] objs = GameObject.FindObjectsOfType<NetworkObject>();
+            foreach (NetworkObject obj in objs)
+            {
+                Debug.Log("Network object", obj);
+            }
         }
 
 #endif // (SEDITOR && UNITY_EDITOR)

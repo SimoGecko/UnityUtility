@@ -526,6 +526,7 @@ namespace sxg
         public static int          WheelOfFortune       (float[] a, float randValue = -1f)
         {
             //returns a UnityEngine.Random.index with probability proportional to a
+            Debug.Assert(!a.IsNullOrEmpty());
             float sum = a.Sum();
 
             if (sum == 0f)
@@ -537,13 +538,9 @@ namespace sxg
             float x = 0f;
             float r;
             if (randValue == -1f)
-            {
                 r = UnityEngine.Random.Range(0f, sum);
-            }
             else
-            {
                 r = randValue * sum;
-            }
 
             for (int i = 0; i < a.Length; i++)
             {
@@ -590,7 +587,12 @@ namespace sxg
         {
             // NOTES: this was previously taking eventRate, which is 1/avgEventWaitTime
             // exponential distribution CDF: L*exp(-L*x) => inverse: -ln(1-y)/L, y~[0,1], L=lambda
-            float y = UnityEngine.Random.value;
+            // https://www.desmos.com/calculator/wo5u0iid05
+            float y;
+            do
+            {
+                y = UnityEngine.Random.value;
+            } while (y == 0f); // ln(0)==-inf
             return -Mathf.Log(y) * avgEventWaitTime;
         }
         public static float        SampleVariability    (this float avg, float var)
