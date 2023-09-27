@@ -97,11 +97,22 @@ namespace sxg
                 return 0f;
             return (value - a) / (b - a);
         }
+        public static double       SumProduct           (double[] a, double[] b)
+        {
+            Debug.Assert(a.Length == b.Length);
+            double ans = 0;
+            for (int i = 0; i < a.Length; i++)
+            {
+                ans += a[i] * b[i];
+            }
+            return ans;
+        }
+        
 
         ////////////////////////// ANGLE ////////////////////////////////
         public static float        Canonicalize         (float angleDeg)
         {
-            // returns the angle in the canonical range ]-180, 180]
+            // returns the angle in the canonical range [-180, 180[
             return (angleDeg + 180f).ModF(360f) - 180f;
         }
         public static float        CanonicalizePI       (float angleRad)
@@ -125,6 +136,25 @@ namespace sxg
                 Mathf.SmoothDampAngle(current.x, target.x, ref velocity.x, smoothTime),
                 Mathf.SmoothDampAngle(current.y, target.y, ref velocity.y, smoothTime),
                 Mathf.SmoothDampAngle(current.z, target.z, ref velocity.z, smoothTime));
+        }
+        public static Vector3      Canonicalize         (this Vector3 anglesDeg)
+        {
+            // returns the angle in the canonical range [-180, 180[
+            return new Vector3(Canonicalize(anglesDeg.x), Canonicalize(anglesDeg.y), Canonicalize(anglesDeg.z));
+        }
+        public static float        ClampAngle           (float angle, float min, float max)
+        {
+            // from https://stackoverflow.com/questions/42246870/clamp-angle-to-arbitrary-range
+            float n_min = Canonicalize(min-angle);
+            float n_max = Canonicalize(max-angle);
+
+            if (n_min <= 0f && n_max >= 0f)
+            {
+                return angle;
+            }
+            if (Mathf.Abs(n_min) < Mathf.Abs(n_max))
+                return min;
+            return max;
         }
 
 
@@ -359,6 +389,7 @@ namespace sxg
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
+        private static float eps = 0.001f;
         public static Vector2      To2                  (this Vector3 vector)
         {
             return new Vector2(vector.x, vector.z);
@@ -369,7 +400,8 @@ namespace sxg
         }
         public static bool         Collinear            (this Vector3 a, Vector3 b)
         {
-            return Vector3.Cross(a, b).sqrMagnitude < 0.001f;
+            return Vector3.Cross(a, b).IsZero();
+        }
         }
         public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
         {
@@ -394,12 +426,11 @@ namespace sxg
         }
         public static bool         IsZero               (this Vector3 vector)
         {
-            float eps = 0.001f;
             return vector.sqrMagnitude <= eps * eps;
         }
         public static bool         IsClose              (this Vector3 vector, Vector3 other)
         {
-            return Vector3.SqrMagnitude(vector - other) <= 0.000001f; // 0.001f^2
+            return (vector - other).IsZero();
         }
         public static Vector3      Mult                 (this Vector3 a, Vector3 b)
         {
@@ -417,6 +448,10 @@ namespace sxg
         {
             return (vector - other).sqrMagnitude <= dist * dist;
         }
+        public static bool         IsUnit               (this Vector3 vector)
+        {
+            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps * eps;
+        }
 
         public static Vector3      xAxis                => Vector3.right;
         public static Vector3      yAxis                => Vector3.up;
@@ -426,9 +461,13 @@ namespace sxg
         ////////////////////////// QUATERNION ////////////////////////////////
         public static Quaternion   FlipX                (this Quaternion q)
         {
-            q.ToAngleAxis(out float angle, out Vector3 axis);
-            axis.x *= -1f; // flip along x
-            return Quaternion.AngleAxis(-angle, axis);
+            // This works but is less efficient as it needs to convert
+            //q.ToAngleAxis(out float angle, out Vector3 axis);
+            //axis.x *= -1f; // flip along x
+            //return Quaternion.AngleAxis(-angle, axis);
+
+            //return new Quaternion(-q.x, q.y, q.z, q.w); // this doesn't work, only flips axis.x *= -1
+            return new Quaternion(q.x, -q.y, -q.z, q.w); // this works, and flips both axis and angle
         }
         public static Quaternion   Inverse              (this Quaternion q)
         {
@@ -560,6 +599,19 @@ namespace sxg
             for (int i = 0; i < 12; i++) result += UnityEngine.Random.value;
             return result - 6f;
         }
+        public static float        SampleNormal()
+        {
+            //Avoid getting u == 0.0
+            float u1 = 0f, u2 = 0f;
+            while (u1 < Mathf.Epsilon || u2 < Mathf.Epsilon)
+            {
+                u1 = UnityEngine.Random.value; //random.random()
+                u2 = UnityEngine.Random.value;
+            }
+            float n1 = Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Cos(2 * Mathf.PI * u2);
+            //float n2 = Mathf.Sqrt(-2f * Mathf.Log(u1)) * Mathf.Sin(2 * Mathf.PI * u2);
+            return n1;//, n2
+        }
         public static float        Normal               (float mu, float sigma)
         {
             return mu + Normal() * sigma;
@@ -662,9 +714,17 @@ namespace sxg
         }
         public static T            FindBest<T>          (this IEnumerable<T> enumerable, Func<T, float> costFunction, Predicate<T> filter = null, T defaultT = default)
         {
-            if (enumerable == null || enumerable.Count() == 0) return defaultT;
+            int bestIndex = FindBestIndex<T>(enumerable, costFunction, filter);
+            if (bestIndex != -1)
+                return enumerable.ElementAt(bestIndex);
+            return default;
+        }
+        public static int          FindBestIndex<T>     (this IEnumerable<T> enumerable, Func<T, float> costFunction, Predicate<T> filter = null)
+        {
+            if (enumerable == null || enumerable.Count() == 0)
+                return -1;
             float minCost = float.MaxValue;
-            T bestElement = defaultT;
+            int bestIndex = -1;
             for (int i = 0; i < enumerable.Count(); i++)
             {
                 T element = enumerable.ElementAt(i);
@@ -674,11 +734,11 @@ namespace sxg
                     if (elementCost < minCost)
                     {
                         minCost = elementCost;
-                        bestElement = element;
+                        bestIndex = i;
                     }
                 }
             }
-            return bestElement;
+            return bestIndex;
         }
         public static T[]          MyAppend<T>          (this T[] array, T newElement)
         {
@@ -1397,6 +1457,33 @@ namespace sxg
         {
             return transform.rotation * q;
         }
+        public static bool         IsDescendantOf       (this Transform transform, Transform query)
+        {
+            if (transform == null || query == null || transform == query)
+                return false;
+            do
+            {
+                transform = transform.parent;
+                if (transform == null)
+                    return false;
+                if (transform == query)
+                    return true;
+            } while (true);
+        }
+        public static bool         IsAncestorOf         (this Transform transform, Transform query)
+        {
+            return IsDescendantOf(query, transform);
+        }
+        public static int          Depth                (this Transform transform)
+        {
+            int ans = 0;
+            while (transform != null)
+            {
+                transform = transform.parent;
+                ++ans;
+            }
+            return ans-1;
+        }
         public static void         SplayChildren        (this Transform transform, float splayAmount, int splayRow = -1)
         {
             int splayCount = splayRow > 0 ? splayRow : Mathf.RoundToInt(Mathf.Sqrt(transform.childCount));
@@ -1464,13 +1551,13 @@ namespace sxg
         }
         public static void         Set                  (this Transform transform, Transf transf)
         {
-            transform.position = transf.pos;
-            transform.rotation = transf.rot;
+            transform.position = transf.position;
+            transform.rotation = transf.rotation;
         }
         public static void         SetLocal             (this Transform transform, Transf transf)
         {
-            transform.localPosition = transf.pos;
-            transform.localRotation = transf.rot;
+            transform.localPosition = transf.position;
+            transform.localRotation = transf.rotation;
         }
         public static Transf       GetTransf            (this Transform transform)
         {
@@ -2083,6 +2170,14 @@ namespace sxg
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
+        public static string       Prettify(this Vector3 v)
+        {
+            return $"Vector3({v.x:0.00000}f, {v.y:0.00000}f, {v.z:0.00000}f)";
+        }
+        public static string       Prettify(this Quaternion q)
+        {
+            return $"Quat({q.x:0.00000}f, {q.y:0.00000}f, {q.z:0.00000}f, {q.w:0.00000}f)";
+        }
         public static void SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
         {
             unityEvent.RemoveAllListeners();
@@ -2192,14 +2287,19 @@ namespace sxg
         {
             Debug.Log($"{message} (gametime = {Time.time}, realtime  = {Time.realtimeSinceStartup})");
         }
-        public static int          ExecuteAndTimeMs     (Action action)
+        public static int          ExecuteAndTimeMs     (Action action, string message = "")
         {
             // PURPOSE: Runs and returns the number of milliseconds it took
             var watch = new System.Diagnostics.Stopwatch();
             watch.Start();
             action();
             watch.Stop();
-            return (int)watch.ElapsedMilliseconds;
+            int ms = (int)watch.ElapsedMilliseconds;
+            if (!message.IsNullOrEmpty())
+            {
+                Debug.Log($"{message} took {ms} ms");
+            }
+            return ms;
         }
         public static int          ExecuteAndTimeUs     (Action action)
         {

@@ -1,4 +1,4 @@
-﻿// (c) Simone Guggiari 2020-2023
+// (c) Simone Guggiari 2020-2023
 
 using System.Collections.Generic;
 using UnityEngine;
@@ -88,12 +88,15 @@ namespace sxg
             UnityEditor.Handles.matrix = Matrix4x4.identity;
 #endif
         }
-
-        public static void DrawCircle       (Vector3 center, float radius)
+        public static void DrawCircle(Vector3 center, float radius)
+        {
+            DrawCircle(center, radius, Vector3.forward);
+        }
+        public static void DrawCircle       (Vector3 center, float radius, Vector3 normal)
         {
 #if (SEDITOR && UNITY_EDITOR)
             UnityEditor.Handles.color = Gizmos.color;
-            UnityEditor.Handles.DrawSolidDisc(center, Vector3.forward, radius);
+            UnityEditor.Handles.DrawSolidDisc(center, normal, radius);
 #endif
         }
 
@@ -148,12 +151,14 @@ namespace sxg
         }
         public static void DrawTransform(Vector3 position, Quaternion rotation, float scale = 0.1f, float alpha = 0.93f)
         {
+            Color color = Gizmos.color;
             Gizmos.color = new Color32(219, 62, 29, 237); // unity red
             Gizmos2.DrawLine(position, position + (rotation * Vector3.right) * scale, 2f);
             Gizmos.color = new Color32(154, 243, 72, 237); // unity green
             Gizmos2.DrawLine(position, position + (rotation * Vector3.up) * scale, 2f);
             Gizmos.color = new Color32(58, 122, 248, 237); // unity blue
             Gizmos2.DrawLine(position, position + (rotation * Vector3.forward) * scale, 2f);
+            Gizmos.color = color;
         }
 
         public static void DrawLine(Vector3 from, Vector3 to, float thickness = 3f)
@@ -161,6 +166,8 @@ namespace sxg
 #if (SEDITOR && UNITY_EDITOR)
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawLine(from, to, thickness);
+#else
+            Gizmos.DrawLine(from, to);
 #endif
         }
 
@@ -176,6 +183,37 @@ namespace sxg
                 Gizmos.DrawLine(p, np);
                 p = np;
             }
+        }
+
+        public static void DrawPyramid(Vector3 position, Quaternion rotation, float height, float baseRadius, int sides = 4, float thickness = 0f)
+        {
+            Vector3 base0 = rotation * Vector3.right;
+            Vector3 base1 = rotation * Vector3.up;
+            Vector3 forward = rotation * Vector3.forward;
+            Vector3 from = position;
+            Vector3 to = position + forward * height;
+
+            float step = 360f / sides;
+            float stepOffset = step/2;
+
+            Vector3[] point = new Vector3[2];
+            Vector2 dir = Utility.DirectionFromAngle(stepOffset) * baseRadius;
+            point[0] = from + base0 * dir[0] + base1 * dir[1];
+
+            for (int i = 1; i <= sides; ++i)
+            {
+                dir = Utility.DirectionFromAngle(step * i + stepOffset) * baseRadius;
+                point[1] = from + base0 * dir[0] + base1 * dir[1];
+                Gizmos2.DrawLine(point[0], point[1], thickness);
+                Gizmos2.DrawLine(point[0], to, thickness);
+                point[0] = point[1];
+            }
+        }
+
+        public static void DrawDottedLine(Vector3 from, Vector3 to, float screenSpaceSize = 5f)
+        {
+            UnityEditor.Handles.color = Gizmos.color;
+            UnityEditor.Handles.DrawDottedLine(from, to, screenSpaceSize);
         }
 
         public static void DrawFrustum(Frustum frustum)

@@ -23,6 +23,15 @@ namespace sxg
             Debug.Log($"{selected.name} has {numChildren} children");
         }
 
+        [UnityEditor.MenuItem("Tools/Print Num Descendants")]
+        public static void PrintNumberOfDescendants()
+        {
+            GameObject selected = UnityEditor.Selection.activeGameObject;
+            int numDescendants = 0;
+            selected.transform.ForeachDescendant(t => ++numDescendants);
+            Debug.Log($"{selected.name} has {numDescendants} descendants");
+        }
+
         [MenuItem("Tools/Clean Transforms")]
         public static void CleanTransforms()
         {

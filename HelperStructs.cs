@@ -23,24 +23,79 @@ namespace sxg
         }
     }
 
+
     ////////////////////////// TRANSF ////////////////////////////////
+    [System.Serializable]
     public struct Transf : INetworkSerializable
     {
-        public Vector3 pos;
-        public Quaternion rot;
+        public Vector3 position;
+        public Quaternion rotation;
 
-        public Transf(Vector3 pos, Quaternion rot)
+        public Transf(Vector3 position, Quaternion rotation)
         {
-            this.pos = pos;
-            this.rot = rot;
+            this.position = position;
+            this.rotation = rotation;
+        }
+
+        public Transf(Transform t)
+        : this(t?.position ?? Vector3.zero, t?.rotation ?? Quaternion.identity)
+        {
         }
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
-            serializer.SerializeValue(ref pos);
-            serializer.SerializeValue(ref rot);
+            serializer.SerializeValue(ref position);
+            serializer.SerializeValue(ref rotation);
+        }
+
+        public static Transf operator*(Transf a, Transf b)
+        {
+            return new Transf(a.position + (a.rotation * b.position), a.rotation * b.rotation);
+        }
+
+        public Transf inverse
+        {
+            get
+            {
+                Quaternion rotInv = rotation.Inverse();
+                return new Transf(rotInv * (-position), rotInv);
+            }
+        }
+
+        public static Transf Lerp(Transf a, Transf b, float t)
+        {
+            return new Transf(
+                Vector3.Lerp(a.position, b.position, t),
+                Quaternion.Slerp(a.rotation, b.rotation, t));
         }
     }
+
+
+    ////////////////////////// AVERAGER ////////////////////////////////
+    struct Averager
+    {
+        private float sum;
+        private int count;
+        public void Average(float value)
+        {
+            sum += value;
+            ++count;
+        }
+        public float Value => sum / count;
+    }
+
+    struct AveragerV3
+    {
+        private Vector3 sum;
+        private int count;
+        public void Average(Vector3 value)
+        {
+            sum += value;
+            ++count;
+        }
+        public Vector3 Value => sum / count;
+    }
+
 
     ////////////////////////// PROPERTY ////////////////////////////////
     //[System.Serializable]
@@ -144,6 +199,7 @@ namespace sxg
         //    return x.Value;
         //}
     }
+
 
     ////////////////////////// PID ////////////////////////////////
     [System.Serializable]
@@ -250,8 +306,8 @@ namespace sxg
         }
         public float Min => min;
         public float Max => max;
-
     }
+
 
     ////////////////////////// TIMED ////////////////////////////////
     [System.Serializable]
