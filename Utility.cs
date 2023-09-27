@@ -402,7 +402,6 @@ namespace sxg
         {
             return Vector3.Cross(a, b).IsZero();
         }
-        }
         public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
         {
             Vector3 normal = vector.normalized;
@@ -459,6 +458,20 @@ namespace sxg
 
 
         ////////////////////////// QUATERNION ////////////////////////////////
+        public static Vector3      GetSwing             (this Quaternion q)
+        {
+            return q * Vector3.forward;
+        }
+        public static float        GetTwist             (this Quaternion q)
+        {
+            //return Vector3.SignedAngle(Vector3.up, q * Vector3.up, GetSwing(q));
+
+            Vector3 swing = q * Vector3.forward;
+            Quaternion swingRot = Quaternion.FromToRotation(Vector3.forward, swing);
+            //Quaternion twistRot = q * Quaternion.Inverse(swingRot);
+            float twist = Vector3.SignedAngle(swingRot*Vector3.up, q*Vector3.up, swing);
+            return twist;
+        }
         public static Quaternion   FlipX                (this Quaternion q)
         {
             // This works but is less efficient as it needs to convert
@@ -1435,26 +1448,38 @@ namespace sxg
         }
         public static Vector3      ToLocalP             (this Transform transform, Vector3 point)
         {
+            if (!transform)
+                return point;
             return transform.InverseTransformPoint(point);
         }
         public static Vector3      ToWorldP             (this Transform transform, Vector3 point)
         {
+            if (!transform)
+                return point;
             return transform.TransformPoint(point);
         }
         public static Vector3      ToLocalV             (this Transform transform, Vector3 vector)
         {
+            if (!transform)
+                return vector;
             return transform.InverseTransformVector(vector);
         }
         public static Vector3      ToWorldV             (this Transform transform, Vector3 vector)
         {
+            if (!transform)
+                return vector;
             return transform.TransformVector(vector);
         }
         public static Quaternion   ToLocal              (this Transform transform, Quaternion q)
         {
+            if (!transform)
+                return q;
             return Quaternion.Inverse(transform.rotation) * q;
         }
         public static Quaternion   ToWorld              (this Transform transform, Quaternion q)
         {
+            if (!transform)
+                return q;
             return transform.rotation * q;
         }
         public static bool         IsDescendantOf       (this Transform transform, Transform query)
