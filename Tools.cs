@@ -6,7 +6,9 @@ using System.Text;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+#if SNETCODE
 using Unity.Netcode;
+#endif
 
 ////////// PURPOSE: Various Tools functions //////////
 
@@ -227,6 +229,26 @@ namespace sxg
         //    Debug.Log(ans);
         //}
 
+        [MenuItem("Tools/Measure Distance")]
+        public static void MeasureDistance()
+        {
+            if (Selection.gameObjects.Length != 2)
+                Debug.Log("Need to select 2 objects to measure the distance");
+            float dist = Vector3.Distance(Selection.gameObjects[0].transform.position, Selection.gameObjects[1].transform.position);
+            Debug.Log($"Distance={dist}");
+        }
+
+#if SNETCODE
+        [MenuItem("Tools/Find NetworkObjects")]
+        public static void FindNetworkObjects()
+        {
+            NetworkObject[] objs = GameObject.FindObjectsOfType<NetworkObject>();
+            foreach (NetworkObject obj in objs)
+            {
+                Debug.Log("Network object", obj);
+            }
+        }
+
         [MenuItem("Tools/Fix NetworkObjects in Scene")]
         public static void FixNetworkObjectsInScene()
         {
@@ -247,25 +269,7 @@ namespace sxg
                 // Afterwards, OnValidate will kick in and return the hash to it's real value, which will be saved now.
             }
         }
-
-        [MenuItem("Tools/Measure Distance")]
-        public static void MeasureDistance()
-        {
-            if (Selection.gameObjects.Length != 2)
-                Debug.Log("Need to select 2 objects to measure the distance");
-            float dist = Vector3.Distance(Selection.gameObjects[0].transform.position, Selection.gameObjects[1].transform.position);
-            Debug.Log($"Distance={dist}");
-        }
-
-        [MenuItem("Tools/Find Network Objects")]
-        public static void FindNetworkObjects()
-        {
-            NetworkObject[] objs = GameObject.FindObjectsOfType<NetworkObject>();
-            foreach (NetworkObject obj in objs)
-            {
-                Debug.Log("Network object", obj);
-            }
-        }
+#endif
 
 #endif // (SEDITOR && UNITY_EDITOR)
     }

@@ -6,8 +6,10 @@ using UnityEngine;
 using System.Reflection;
 using System;
 using System.Linq;
-using Unity.Netcode;
 using UnityEditor;
+#if SNETCODE
+using Unity.Netcode;
+#endif
 
 ////////// DESCRIPTION //////////
 
@@ -125,6 +127,7 @@ namespace sxg
     {
     }
 
+#if SNETCODE
     [CustomEditor(typeof(NetworkBehaviour), true), CanEditMultipleObjects]
     public class MyNetworkBehaviourEditor : Editor
     {
@@ -135,6 +138,7 @@ namespace sxg
             ButtonDrawerHelper.DrawButtonsForType(mono.GetType(), mono);
         }
     }
+#endif
 
     [CustomEditor(typeof(MonoBehaviour), true), CanEditMultipleObjects]
     public class MyMonoBehaviourEditor : Editor

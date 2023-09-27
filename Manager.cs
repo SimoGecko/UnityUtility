@@ -1,8 +1,10 @@
 // (c) Simone Guggiari 2023
 
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
+#if SNETCODE
+using Unity.Netcode;
+#endif
 
 ////////// PURPOSE: Provides the Singleton pattern //////////
 
@@ -26,6 +28,7 @@ namespace sxg
         }
     }
 
+#if SNETCODE
     public class NetworkManager<T> : NetworkBehaviour where T : NetworkBehaviour
     {
         private static T instance;
@@ -37,13 +40,14 @@ namespace sxg
                 return instance;
             }
         }
-
+    
         public override void OnDestroy()
         {
             base.OnDestroy();
             instance = null;
         }
     }
+#endif
 
     /*
         [CustomEditor(typeof(__TYPE__))]

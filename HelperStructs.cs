@@ -1,8 +1,10 @@
 // (c) Simone Guggiari 2022-2023
 
 using System.Collections.Generic;
-using Unity.Netcode;
 using UnityEngine;
+#if SNETCODE
+using Unity.Netcode;
+#endif
 
 ////////// PURPOSE:  //////////
 
@@ -26,7 +28,10 @@ namespace sxg
 
     ////////////////////////// TRANSF ////////////////////////////////
     [System.Serializable]
-    public struct Transf : INetworkSerializable
+    public struct Transf
+#if SNETCODE
+        : INetworkSerializable
+#endif
     {
         public Vector3 position;
         public Quaternion rotation;
@@ -42,11 +47,13 @@ namespace sxg
         {
         }
 
+#if SNETCODE
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
             serializer.SerializeValue(ref position);
             serializer.SerializeValue(ref rotation);
         }
+#endif
 
         public static Transf operator*(Transf a, Transf b)
         {
