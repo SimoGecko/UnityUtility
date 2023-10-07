@@ -41,12 +41,25 @@ namespace sxg
             this.position = position;
             this.rotation = rotation;
         }
+        public Transf(Vector3 position, Vector3 euler)
+            : this(position, Quaternion.Euler(euler))
+        {
+        }
+        public Transf(Vector3 position)
+            : this(position, Quaternion.identity)
+        {
+        }
 
         public Transf(Transform t)
         : this(t?.position ?? Vector3.zero, t?.rotation ?? Quaternion.identity)
         {
         }
+        public static Transf identity => new(Vector3.zero, Quaternion.identity);
 
+        public static implicit operator Transf(Transform t)
+        {
+            return new(t);
+        }
 #if SNETCODE
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -58,6 +71,14 @@ namespace sxg
         public static Transf operator*(Transf a, Transf b)
         {
             return new Transf(a.position + (a.rotation * b.position), a.rotation * b.rotation);
+        }
+        public static Transf operator *(Transf a, Transform b)
+        {
+            return a * new Transf(b);
+        }
+        public static Transf operator *(Transform a, Transf b)
+        {
+            return new Transf(a) * b;
         }
 
         public Transf inverse
@@ -75,6 +96,8 @@ namespace sxg
                 Vector3.Lerp(a.position, b.position, t),
                 Quaternion.Slerp(a.rotation, b.rotation, t));
         }
+        public Vector3 eulerAngles => rotation.eulerAngles;
+        public Vector3 axisAngle => rotation.ToAxisTimesAngle();
     }
 
 
@@ -304,6 +327,7 @@ namespace sxg
             this.max = max;
         }
 
+        public float Random => Lerp(UnityEngine.Random.value);
         public float Lerp(float t) => Mathf.Lerp(min, max, t);
         public float Clamp(float value) => Mathf.Clamp(value, min, max);
         public bool Contains(float t)

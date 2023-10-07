@@ -57,6 +57,10 @@ namespace sxg
         {
             return toMin + (toMax - toMin) * ((value - fromMin) / (fromMax - fromMin));
         }
+        public static float        Remap                (this float value, Range from, Range to)
+        {
+            return to.Min + (to.Max - to.Min) * ((value - from.Min) / (from.Max - from.Min));
+        }
         public static float        RemapClamp           (this float value, float fromMin, float fromMax, float toMin, float toMax)
         {
             return toMin + (toMax - toMin) * Mathf.Clamp01((value - fromMin) / (fromMax - fromMin));
@@ -386,6 +390,10 @@ namespace sxg
         {
             return (vector - other).sqrMagnitude <= dist * dist;
         }
+        public static bool         IsZero               (this Vector2 vector)
+        {
+            return vector.sqrMagnitude <= eps * eps;
+        }
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
@@ -450,6 +458,12 @@ namespace sxg
         public static bool         IsUnit               (this Vector3 vector)
         {
             return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps * eps;
+        }
+        public static void         Deconstruct          (this Vector3 vector, out float x, out float y, out float z)
+        {
+            x = vector.x;
+            y = vector.y;
+            z = vector.z;
         }
 
         public static Vector3      xAxis                => Vector3.right;
@@ -531,10 +545,15 @@ namespace sxg
         {
             return Quaternion.Euler(-angle, 90f, 0f);
         }
+        public static Vector3      ToAxisTimesAngle         (this Quaternion q)
+        {
+            q.ToAngleAxis(out float angle, out Vector3 axis);
+            return axis * angle;
+        }
 
 
         ////////////////////////// FUZZY MATH ////////////////////////////////
-        public static bool         FuzzyEq               (float a, float b)
+        public static bool         FuzzyEq               (this float a, float b)
         {
             //return Mathf.Approximately(a, b);
             return Mathf.Abs(a - b) < 0.0001f;
@@ -675,7 +694,8 @@ namespace sxg
         }
         public static T            SafeGet<T>           (this IEnumerable<T> enumerable, int index, T defaultT = default)
         {
-            if (enumerable == null || 0 > index || index >= enumerable.Count()) return defaultT;
+            if (enumerable == null || index < 0 || index >= enumerable.Count())
+                return defaultT;
             return enumerable.ElementAt(index);
         }
         public static T            Get<T>               (this IEnumerable<T> enumerable, int index, T defaultT = default)
@@ -1591,6 +1611,14 @@ namespace sxg
         public static Transf       GetTransfLocal       (this Transform transform)
         {
             return new(transform.localPosition, transform.localRotation);
+        }
+        public static Transf       Inverse              (this Transform transform)
+        {
+            return new Transf(transform).inverse;
+        }
+        public static void         PreRotate            (this Transform transform, Quaternion rot)
+        {
+            transform.rotation = rot * transform.rotation;
         }
 
 

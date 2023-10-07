@@ -193,8 +193,6 @@ namespace sxg
             ans.Reverse();
             return ans;
         }
-
-
     }
 
     static class ButtonDrawerHelper
