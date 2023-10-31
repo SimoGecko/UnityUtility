@@ -550,6 +550,14 @@ namespace sxg
             q.ToAngleAxis(out float angle, out Vector3 axis);
             return axis * angle;
         }
+        public static Quaternion QuaternionFromAxisTimesAngle(this Vector3 v)
+        {
+            if (v.IsZero())
+                return Quaternion.identity;
+            float angle = v.magnitude;
+            Vector3 axis = v / angle;
+            return Quaternion.AngleAxis(angle, axis);
+        }
 
 
         ////////////////////////// FUZZY MATH ////////////////////////////////

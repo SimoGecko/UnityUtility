@@ -3,6 +3,7 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace sxg
 {
@@ -46,8 +47,6 @@ namespace sxg
 
             Rect screenRect = new();
 
-            offset = EditorGUILayout.Vector2Field("offset", offset);
-
             if (plots != null)
             {
                 int plotCount = 0;
@@ -72,11 +71,19 @@ namespace sxg
                     while (values.Count > maxSamples)
                         values.RemoveAt(0);
 
+                    Range valueRange = plot.Range();
+                    if (plot.AutoRange)
+                    {
+                        float min = values.Min();
+                        float max = values.Max();
+                        if (min != max)
+                            valueRange = new Range(min, max);
+                    }
+
                     List<Vector3> graphPoints = new();
                     for (int i = 0; i < values.Count; i++)
                     {
                         float time = (float)i / maxSamples; // [0..1]
-                        Range valueRange = plot.Range();
                         float value = Utility.InverseLerpUnclamped(valueRange.Min, valueRange.Max, values[i]); // [0..1] unclamped
                         Vector3 p = screenRect.GetPoint(new Vector2(time, 1f - value));
                         graphPoints.Add(p);
@@ -161,20 +168,28 @@ namespace sxg
             public Color Color => att.color;
             public bool UseSameGraph => att.sameGraph;
             public string Label => att.label;
+            public bool AutoRange => att.autoRange;
         }
 
     }
 
     public class PlotAttribute : PropertyAttribute
     {
+        public bool autoRange;
         public float minValue;
         public float maxValue;
         public Color color;
         public bool sameGraph;
         public string label;
 
+        public PlotAttribute(string color = "red", bool sameGraph = false, string label = null)
+            : this(-1f, 1f, color, sameGraph, label)
+        {
+            autoRange = true;
+        }
         public PlotAttribute(float minValue, float maxValue, string color, bool sameGraph = false, string label = null)
         {
+            autoRange = false;
             this.minValue = minValue;
             this.maxValue = maxValue;
             this.color = ColorNameToColor(color);
@@ -199,6 +214,10 @@ namespace sxg
 #else
     public class PlotAttribute : PropertyAttribute
     {
+
+        public PlotAttribute(string color = "", bool sameGraph = false, string label = null)
+        {
+        }
         public PlotAttribute(float minValue, float maxValue, string color, bool sameGraph = false, string label = null)
         {
         }
