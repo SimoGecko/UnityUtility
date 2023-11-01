@@ -212,8 +212,10 @@ namespace sxg
 
         public static void DrawDottedLine(Vector3 from, Vector3 to, float screenSpaceSize = 5f)
         {
+#if SEDITOR
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawDottedLine(from, to, screenSpaceSize);
+#endif
         }
 
         public static void DrawFrustum(Frustum frustum)
