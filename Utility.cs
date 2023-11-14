@@ -19,7 +19,7 @@ namespace sxg
     // Naming: Get / Find / Compute / 
     public static partial class Utility
     {
-
+        static float eps = 1e-4f;
         ////////////////////////// MATH ////////////////////////////////
         public static int          Mod                  (this int value, int mod)
         {
@@ -35,7 +35,7 @@ namespace sxg
         }
         public static float        Sign                 (this float value)
         {
-            return Mathf.Abs(value) < 0.0001f ? 0f : value > 0f ? 1f : -1f;
+            return Mathf.Abs(value) <= eps ? 0f : value > 0f ? 1f : -1f;
         }
         public static int          SignNo0              (this int value)
         {
@@ -79,7 +79,7 @@ namespace sxg
         }
         public static bool         IsClose              (this float value, float value2)
         {
-            return Mathf.Abs(value-value2) < 0.0001f;
+            return Mathf.Abs(value-value2) <= eps;
         }
         public static float        SumProduct           (float[] a, float[] b)
         {
@@ -397,7 +397,6 @@ namespace sxg
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
-        private static float eps = 0.00001f;
         public static Vector2      To2                  (this Vector3 vector)
         {
             return new Vector2(vector.x, vector.z);
@@ -541,7 +540,7 @@ namespace sxg
             currentVelocity = new Quaternion(imag.x, imag.y, imag.z, 0f);
 
             angle = angularStep.magnitude;
-            Quaternion step = angle < 0.00001f ? Quaternion.identity : Quaternion.AngleAxis(angle, angularStep / angle);
+            Quaternion step = angle <= eps  ? Quaternion.identity : Quaternion.AngleAxis(angle, angularStep / angle);
             Quaternion output = step * target;
             output.Normalize();
             return output;
@@ -552,7 +551,7 @@ namespace sxg
         public static bool         FuzzyEq               (this float a, float b)
         {
             //return Mathf.Approximately(a, b);
-            return Mathf.Abs(a - b) < 0.0001f;
+            return Mathf.Abs(a - b) <= eps;
         }
         public static bool         FuzzyEq               (this Vector2 v, Vector2 o)
         {
@@ -629,7 +628,7 @@ namespace sxg
         }
         public static float        SampleNormal()
         {
-            //Avoid getting u == 0.0
+            //Avoid getting u == 0
             float u1 = 0f, u2 = 0f;
             while (u1 < Mathf.Epsilon || u2 < Mathf.Epsilon)
             {
@@ -1079,13 +1078,12 @@ namespace sxg
         {
             Vector2 d0 = (p1 - p0).normalized;
             Vector2 d1 = (p2 - p1).normalized;
-            const float tolerance = 1f - 0.01f;
             float dot = Vector2.Dot(d0, d1);
-            if (dot >= tolerance) // collinear
+            if (dot >= 1f - eps) // collinear
             {
                 return p1 + d0.Rotate90() * offset;
             }
-            else if (dot <= -tolerance) // opposite
+            else if (dot <= -1f + eps) // opposite
             {
                 return p1 - d0 * offset;
             }
@@ -1103,12 +1101,11 @@ namespace sxg
             // NOTES: d is coming TOWARDS the center, r is going AWAY from it (like raycasting)
             // thanks wolframalpha
             float dot = Vector2.Dot(d, r);
-            const float tolerance = 0.001f;
-            if (dot > 1f - tolerance) // collinear
+            if (dot > 1f - eps) // collinear
             {
                 return d.Rotate90();
             }
-            else if (dot < -1f + tolerance) // opposite
+            else if (dot < -1f + eps) // opposite
             {
                 return -d;
             }
@@ -1151,7 +1148,7 @@ namespace sxg
 
             float e = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
 
-            if (e == 0.0f)
+            if (e == 0f)
             {
                 return false;
             }
@@ -1159,7 +1156,7 @@ namespace sxg
             float u = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / e;
             float v = ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)) / e;
 
-            if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f)
+            if (u < 0f || u > 1f || v < 0f || v > 1f)
             {
                 return false;
             }
@@ -1198,7 +1195,7 @@ namespace sxg
         public static float        FindSegmentDistanceToPointSquared  (Vector2 a, Vector2 b, Vector2 p)
         {
             float l2 = (a - b).sqrMagnitude;
-            if (Mathf.Abs(l2) < 0.0001f) return (p - a).sqrMagnitude;
+            if (Mathf.Abs(l2) < eps) return (p - a).sqrMagnitude;
             float t = Mathf.Clamp01(Vector2.Dot(p - a, b - a) / l2);
             Vector2 projection = a + t * (b - a);
             return (p - projection).sqrMagnitude;
@@ -1280,7 +1277,8 @@ namespace sxg
         {
             Vector3 forward = transform.forward;
             forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f) return 0f;
+            if (forward.sqrMagnitude < eps)
+                return 0f;
             float heading = Vector3.SignedAngle(Vector3.forward, forward, Vector3.up);
             return heading;
         }
@@ -1673,7 +1671,7 @@ namespace sxg
         }
         public static void         Brake_DEPRECATED     (this Rigidbody rb, float breakAcc)
         {
-            if (rb.velocity.magnitude > 0.0001f)
+            if (rb.velocity.magnitude > eps)
             {
                 float maxAccNeeded = rb.velocity.magnitude / Time.fixedDeltaTime;
                 //acceleration += -velocity.normalized * maxAcceleration;//Mathf.Min(maxAccNeeded, breakAcc);
@@ -2200,13 +2198,14 @@ namespace sxg
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
+        private static string F(float value) => $"{value:0.00000}f";
         public static string       Prettify(this Vector3 v)
         {
-            return $"Vector3({v.x:0.00000}f, {v.y:0.00000}f, {v.z:0.00000}f)";
+            return $"Vector3({F(v.x)}, {F(v.y)}, {F(v.z)})";
         }
         public static string       Prettify(this Quaternion q)
         {
-            return $"Quat({q.x:0.00000}f, {q.y:0.00000}f, {q.z:0.00000}f, {q.w:0.00000}f)";
+            return $"Quat({F(q.x)}, {F(q.y)}, {F(q.z)}, {F(q.w)})";
         }
         public static void SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
         {
