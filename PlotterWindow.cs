@@ -42,8 +42,6 @@ namespace sxg
         {
             GameObject newTargetObject = EditorGUILayout.ObjectField("Target Object", targetObject, typeof(GameObject), true) as GameObject;
             SetTargetObject(newTargetObject);
-            if (newTargetObject == null && Application.isPlaying)
-                SetTargetObject(FindObjectOfType<sxg.tt3.Bot>()?.gameObject); // HACK
 
             Rect screenRect = new();
 

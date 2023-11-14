@@ -397,7 +397,7 @@ namespace sxg
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
-        private static float eps = 0.001f;
+        private static float eps = 0.00001f;
         public static Vector2      To2                  (this Vector3 vector)
         {
             return new Vector2(vector.x, vector.z);
@@ -500,33 +500,6 @@ namespace sxg
         {
             return Quaternion.Inverse(q);
         }
-        public static Quaternion   SmoothDamp           (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
-        {
-            if (Time.deltaTime < Mathf.Epsilon) return rot;
-            // account for double-cover
-            float dot = Quaternion.Dot(rot, target);
-            float multi = dot >= 0f ? 1f : -1f;
-            target.x *= multi;
-            target.y *= multi;
-            target.z *= multi;
-            target.w *= multi;
-            // smooth damp (nlerp approx)
-            var result = new Vector4(
-                Mathf.SmoothDamp(rot.x, target.x, ref deriv.x, time),
-                Mathf.SmoothDamp(rot.y, target.y, ref deriv.y, time),
-                Mathf.SmoothDamp(rot.z, target.z, ref deriv.z, time),
-                Mathf.SmoothDamp(rot.w, target.w, ref deriv.w, time)
-            ).normalized;
-
-            // ensure deriv is tangent
-            var derivError = Vector4.Project(new Vector4(deriv.x, deriv.y, deriv.z, deriv.w), result);
-            deriv.x -= derivError.x;
-            deriv.y -= derivError.y;
-            deriv.z -= derivError.z;
-            deriv.w -= derivError.w;
-
-            return new Quaternion(result.x, result.y, result.z, result.w);
-        }
         public static Quaternion   RandomQuaternion     ()
         {
             //return Quaternion.Euler(Random.value * 360f, Random.value * 360f, Random.value * 360f);
@@ -545,18 +518,33 @@ namespace sxg
         {
             return Quaternion.Euler(-angle, 90f, 0f);
         }
-        public static Vector3      ToAxisTimesAngle         (this Quaternion q)
+        public static Vector3      ToAxisTimesAngle     (this Quaternion q)
         {
             q.ToAngleAxis(out float angle, out Vector3 axis);
             return axis * angle;
         }
-        public static Quaternion QuaternionFromAxisTimesAngle(this Vector3 v)
+        public static Quaternion   QuaternionFromAxisTimesAngle(this Vector3 v)
         {
             if (v.IsZero())
                 return Quaternion.identity;
             float angle = v.magnitude;
             Vector3 axis = v / angle;
             return Quaternion.AngleAxis(angle, axis);
+        }
+        public static Quaternion   SmoothDamp           (Quaternion current, Quaternion target, ref Quaternion currentVelocity, float smoothTime)//, float maxSpeed = -1f, float deltaTime = -1f)
+        {
+            Quaternion changeQuat = current * target.Inverse();
+            changeQuat.ToAngleAxis(out float angle, out Vector3 axis);
+            Vector3 change = angle * axis;
+            Vector3 imag = new(currentVelocity.x, currentVelocity.y, currentVelocity.z);
+            Vector3 angularStep = Vector3.SmoothDamp(change, Vector3.zero, ref imag, smoothTime);//, maxSpeed, deltaTime);
+            currentVelocity = new Quaternion(imag.x, imag.y, imag.z, 0f);
+
+            angle = angularStep.magnitude;
+            Quaternion step = angle < 0.00001f ? Quaternion.identity : Quaternion.AngleAxis(angle, angularStep / angle);
+            Quaternion output = step * target;
+            output.Normalize();
+            return output;
         }
 
 
@@ -1008,6 +996,10 @@ namespace sxg
         public static IEnumerable<T> EmptyEnumerable<T> ()
         {
             return Enumerable.Empty<T>();
+        }
+        public static T            GetMod<T>            (this IEnumerable<T> enumerable, int index)
+        {
+            return enumerable.ElementAt(index.Mod(enumerable.Count()));
         }
 
 
@@ -1659,14 +1651,14 @@ namespace sxg
         }
         public static void         SetVelocity          (this Rigidbody rb, Vector3 velocity)
         {
-            rb.velocity = Vector3.zero;
-            rb.AddForce(velocity, ForceMode.VelocityChange);
+            rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody rb, Vector3 acceleration)
         {
             rb.AddForce(acceleration, ForceMode.Acceleration);
         }
-        public static void         AddAccelerationMaxVelocity(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
+
+        public static void         AddAccelerationMaxVelocity_DEPRECATED(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
         {
             float speedDelta = maxVelocity - rb.velocity.magnitude;
             if (speedDelta > 0f)
@@ -1679,7 +1671,7 @@ namespace sxg
                 rb.AddForce(acceleration, ForceMode.Acceleration);
             }
         }
-        public static void         Brake                (this Rigidbody rb, float breakAcc)
+        public static void         Brake_DEPRECATED     (this Rigidbody rb, float breakAcc)
         {
             if (rb.velocity.magnitude > 0.0001f)
             {
@@ -1691,91 +1683,73 @@ namespace sxg
         }
         public static void         AddRelativeForceAtPosition(this Rigidbody rb, Vector3 force, Vector3 position, ForceMode mode)
         {
-            Vector3 forceW = rb.transform.TransformVector(force);
-            Vector3 posW = rb.transform.TransformPoint(position);
-            rb.AddForceAtPosition(forceW, posW, mode);
+            Vector3 forceWorld = rb.transform.TransformVector(force);
+            Vector3 posWorld   = rb.transform.TransformPoint(position);
+            rb.AddForceAtPosition(forceWorld, posWorld, mode);
         }
 
-        ////////////////////////// RIGIDBODY 2D ////////////////////////////////
-
-        public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
+        public static Vector3      ConvertToForce       (Vector3 value, ForceMode mode, float mass, float dt)
         {
             switch (mode)
             {
             case ForceMode.Force:
-                rb.AddForce(force);
-                break;
-            case ForceMode.Impulse:
-                rb.AddForce(force / Time.fixedDeltaTime);
-                break;
+                return value;
             case ForceMode.Acceleration:
-                rb.AddForce(force * rb.mass);
-                break;
+                return value * mass; // F = ma
+            case ForceMode.Impulse:
+                return value / dt;
             case ForceMode.VelocityChange:
-                rb.AddForce(force * rb.mass / Time.fixedDeltaTime);
-                break;
+                return value * mass / dt;
             }
+            Debug.Assert(false);
+            return Vector3.zero;
+        }
+        public static float        ConvertToForce       (float value, ForceMode mode, float mass, float dt)
+            => ConvertToForce(new Vector3(value, 0f, 0f), mode, mass, dt).x;
+
+
+        ////////////////////////// RIGIDBODY 2D ////////////////////////////////
+        public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
+        {
+            rb.AddForce(ConvertToForce(force, mode, rb.mass, Time.fixedDeltaTime));
         }
         public static void         AddRelativeForce     (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddRelativeForce(force);
-                break;
-            case ForceMode.Impulse:
-                rb.AddRelativeForce(force / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddRelativeForce(force * rb.mass);
-                break;
-            case ForceMode.VelocityChange:
-                rb.AddRelativeForce(force * rb.mass / Time.fixedDeltaTime);
-                break;
-            }
+            rb.AddRelativeForce(ConvertToForce(force, mode, rb.mass, Time.fixedDeltaTime));
         }
         public static void         AddTorque            (this Rigidbody2D rb, float torque, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddTorque(torque);
-                break;
-            case ForceMode.Impulse:
-                rb.AddTorque(torque / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddTorque(torque * rb.inertia);
-                break;
-            case ForceMode.VelocityChange:
-                //rb.AddTorque(torque * rb.inertia / Time.fixedDeltaTime);
-                rb.angularVelocity += torque;
-                break;
-            }
+            rb.AddTorque(ConvertToForce(torque, mode, rb.inertia, Time.fixedDeltaTime));
         }
         public static void         AddVelocity          (this Rigidbody2D rb, Vector2 velocity)
         {
-            rb.velocity += velocity;
+            rb.AddForce(velocity, ForceMode.VelocityChange);
         }
         public static void         SetVelocity          (this Rigidbody2D rb, Vector2 velocity)
         {
-            rb.velocity = velocity;
+            rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody2D rb, Vector2 acceleration)
         {
-            rb.AddForce(acceleration * rb.mass);
+            rb.AddForce(acceleration, ForceMode.Acceleration);
         }
         public static void         AddRelativeAcceleration(this Rigidbody2D rb, Vector2 acceleration)
         {
-            rb.AddRelativeForce(acceleration * rb.mass);
+            rb.AddRelativeForce(acceleration, ForceMode.Acceleration);
         }
-        public static void         AddTorqueToReachRotation(this Rigidbody2D rb, float targetRotation, float maxTorque)
+        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
+        {
+            rb.velocity = other.velocity;
+            rb.angularVelocity = other.angularVelocity;
+        }
+
+        public static void         AddTorqueToReachRotation_DEPRECATED(this Rigidbody2D rb, float targetRotation, float maxTorque)
         {
             float deltaAngle = Mathf.DeltaAngle(rb.rotation, targetRotation); // todo: ensure in [-180, 180
             float torque = Math.Clamp(deltaAngle, -maxTorque, maxTorque);
             rb.AddTorque(torque, ForceMode2D.Force);
         }
-        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime(float velocityMax, float timeToVelocityMax)
+        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime_DEPRECATED(float velocityMax, float timeToVelocityMax)
         {
             float v = velocityMax;
             float T = timeToVelocityMax;
@@ -1785,11 +1759,6 @@ namespace sxg
             float d = (1f - Mathf.Exp(Mathf.Log(1f - p) * t / T)) / t;
             float a = v * d;
             return (a, d);
-        }
-        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
-        {
-            rb.velocity = other.velocity;
-            rb.angularVelocity = other.angularVelocity;
         }
 
 

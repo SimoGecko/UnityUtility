@@ -28,7 +28,7 @@ namespace sxg
 
     ////////////////////////// TRANSF ////////////////////////////////
     [System.Serializable]
-    public struct Transf
+    public struct Transf // TODO: rename CFrame
 #if SNETCODE
         : INetworkSerializable
 #endif
@@ -98,6 +98,13 @@ namespace sxg
         }
         public Vector3 eulerAngles => rotation.eulerAngles;
         public Vector3 axisAngle => rotation.ToAxisTimesAngle();
+
+        public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)// float maxSpeed, float deltaTime)
+        {
+            return new Transf(
+                Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime),
+                Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime));
+        }
     }
 
 

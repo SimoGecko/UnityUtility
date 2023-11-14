@@ -123,4 +123,59 @@ namespace sxg
         public Matrix4x4 Matrix => localToWorldMatrix;
     }
 
+    [System.Serializable]
+    public struct Capsule // currently assumed to be about the Y index
+    {
+        public Vector3 center;
+        public float radius;
+        public float height;
+        Quaternion rot;
+
+        public Capsule(Vector3 center, float radius, float height)
+        {
+            this.center = center;
+            this.radius = radius;
+            this.height = height;
+            rot = Quaternion.identity;
+        }
+        public Capsule(CapsuleCollider collider)
+        {
+            this.center = collider.center;
+            this.radius = collider.radius;
+            this.height = collider.height;
+            rot = Quaternion.identity;
+        }
+        public Capsule(Capsule other)
+        {
+            this.center = other.center;
+            this.radius = other.radius;
+            this.height = other.height;
+            rot = Quaternion.identity;
+        }
+
+        public float HalfBodyHeight => Mathf.Max(height / 2f - radius, 0f);
+        public Vector3 Point1 => center + Axis * HalfBodyHeight;
+        public Vector3 Point2 => center - Axis * HalfBodyHeight;
+        public Vector3 Axis => rot * Vector3.up;
+        public Quaternion rotation => rot;
+
+        public Vector3 Top    => center + Axis * (HalfBodyHeight + radius);
+        public Vector3 Bottom => center - Axis * (HalfBodyHeight + radius);
+
+        public void Transform(Transform t)
+        {
+            center = t.TransformPoint(center);
+            rot = t.rotation;
+        }
+        public void Translate(Vector3 delta)
+        {
+            center += delta;
+        }
+        public void Expand(float delta)
+        {
+            radius += delta;
+            height += delta * 2f;
+        }
+    }
+
 }
