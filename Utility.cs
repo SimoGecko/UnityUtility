@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine.Events;
+using System.IO;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -201,6 +202,10 @@ namespace sxg
         {
             return Mathf.CeilToInt(value / amount) * amount;
         }
+        public static float        RoundDecimals        (this float value, int decimals)
+        {
+            return System.MathF.Round(value, decimals);
+        }
 
         public static float        Clean                (float value, float amount, float eps)
         {
@@ -318,13 +323,21 @@ namespace sxg
                 return vector.normalized * max;
             return vector;
         }
-        public static Vector2      Clamp                (this Vector2 vector, float min, float max)
+        public static Vector2      ClampMagnitude       (this Vector2 vector, float min, float max)
         {
             return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
         public static Vector2      ClampComponents      (this Vector2 vector, float min, float max)
         {
-            return new Vector2(Mathf.Clamp(vector.x, min, max), Mathf.Clamp(vector.y, min, max));
+            return new Vector2(
+                Mathf.Clamp(vector.x, min, max),
+                Mathf.Clamp(vector.y, min, max));
+        }
+        public static Vector2 ClampComponents(this Vector2 vector, Vector2 min, Vector2 max)
+        {
+            return new Vector2(
+                Mathf.Clamp(vector.x, min.x, max.x),
+                Mathf.Clamp(vector.y, min.y, max.y));
         }
         public static Vector2      Quantize             (this Vector2 vector, int angleQuantization, int magnitudeQuantization)
         {
@@ -471,6 +484,13 @@ namespace sxg
             y = vector.y;
             z = vector.z;
         }
+        public static Vector3      ClampComponents      (this Vector3 vector, Vector3 min, Vector3 max)
+        {
+            return new(
+                Mathf.Clamp(vector.x, min.x, max.x),
+                Mathf.Clamp(vector.y, min.y, max.y),
+                Mathf.Clamp(vector.z, min.z, max.z));
+        }
         public static Vector3      Truncate             (this Vector3 vector, float max)
         {
             Debug.Assert(max >= 0f);
@@ -516,6 +536,60 @@ namespace sxg
         public static Quaternion   Inverse              (this Quaternion q)
         {
             return Quaternion.Inverse(q);
+        }
+        public static Vector3      GetImag              (this Quaternion q)
+        {
+            return new Vector3(q.x, q.y, q.z);
+        }
+        public static void         SetImag              (this Quaternion q, Vector3 vector)
+        {
+            q.x = vector.x;
+            q.y = vector.y;
+            q.z = vector.z;
+            q.w = 0f;
+        }
+        public static Quaternion   SmoothDamp           (Quaternion current, Quaternion target, ref Quaternion currentVelocity, float smoothTime)
+        {
+            Quaternion changeQuat = current * target.Inverse();
+            changeQuat.ToAngleAxis(out float angle, out Vector3 axis);
+            Vector3 change = axis * angle;
+            Vector3 imag = currentVelocity.GetImag();
+            Vector3 angularStep = Vector3.SmoothDamp(change, Vector3.zero, ref imag, smoothTime);
+            currentVelocity.SetImag(imag);
+            if (angularStep.IsZero())
+                return target;
+            angle = angularStep.magnitude;
+            axis = angularStep / angle;
+            Quaternion step = Quaternion.AngleAxis(angle, axis);
+            Quaternion output = step * target;
+            return output.normalized;
+        }
+        public static Quaternion   SmoothDampOld        (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
+        {
+            if (Time.deltaTime < Mathf.Epsilon) return rot;
+            // account for double-cover
+            float dot = Quaternion.Dot(rot, target);
+            float multi = dot >= 0f ? 1f : -1f;
+            target.x *= multi;
+            target.y *= multi;
+            target.z *= multi;
+            target.w *= multi;
+            // smooth damp (nlerp approx)
+            var result = new Vector4(
+                Mathf.SmoothDamp(rot.x, target.x, ref deriv.x, time),
+                Mathf.SmoothDamp(rot.y, target.y, ref deriv.y, time),
+                Mathf.SmoothDamp(rot.z, target.z, ref deriv.z, time),
+                Mathf.SmoothDamp(rot.w, target.w, ref deriv.w, time)
+            ).normalized;
+
+            // ensure deriv is tangent
+            var derivError = Vector4.Project(new Vector4(deriv.x, deriv.y, deriv.z, deriv.w), result);
+            deriv.x -= derivError.x;
+            deriv.y -= derivError.y;
+            deriv.z -= derivError.z;
+            deriv.w -= derivError.w;
+
+            return new Quaternion(result.x, result.y, result.z, result.w);
         }
         public static Quaternion   RandomQuaternion     ()
         {
@@ -1457,6 +1531,15 @@ namespace sxg
             }
             return child;
         }
+        public static void         ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
+        {
+            transform.ForeachDescendant(t =>
+            {
+                T comp = t.GetComponent<T>();
+                if (comp != null)
+                    action(comp);
+            }, includeSelf);
+        }
         public static void         ForeachDescendant    (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
             // BFS
@@ -1478,7 +1561,7 @@ namespace sxg
                 }
             }
         }
-        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action)
+        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action, bool includeSelf = true)
         {
             // DFS
             if (transform == null || action == null) return;
@@ -1496,6 +1579,12 @@ namespace sxg
                     stack.Push(child);
                 }
             }
+        }
+        public static int          DescendantCount      (this Transform transform)
+        {
+            int ans = 0;
+            transform.ForeachDescendant(t => ++ans);
+            return ans;
         }
         public static void         ForeachChild         (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
@@ -1961,6 +2050,41 @@ namespace sxg
             }
             return ans;
         }
+        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = ',') where T : struct
+        {
+            List<T> ans = new();
+            StringReader reader = new(csvData);
+            int numStructFields = typeof(T).GetFields().Length;
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.IsNullOrEmpty() || line[0] == '#')
+                    continue;
+
+                string[] fields = line.Split(separator);
+                if (fields.Length != numStructFields)
+                {
+                    Debug.Log($"Skipping line: {line} - Field count mismatch");
+                    continue;
+                }
+
+                T parsedStruct = ParseStruct<T>(fields);
+                ans.Add(parsedStruct);
+            }
+            return ans;
+        }
+        private static T           ParseStruct<T>       (string[] fields) where T : struct
+        {
+            T result = default;
+            int index = 0;
+            foreach (var fieldInfo in typeof(T).GetFields())
+            {
+                object parsedValue = Convert.ChangeType(fields[index], fieldInfo.FieldType);
+                fieldInfo.SetValueDirect(__makeref(result), parsedValue);
+                index++;
+            }
+            return result;
+        }
 
         public static string       IntToAlphaNumeric    (int number, int N)
         {
@@ -2176,6 +2300,45 @@ namespace sxg
             if (!fullpath.EndsWith(".png")) fullpath += ".png";
             System.IO.File.WriteAllBytes(fullpath, _bytes);
             Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
+        }
+        public static void ExportMeshAsObj(this Mesh mesh, string fullpath)
+        {
+            using (StreamWriter sw = new StreamWriter(fullpath))
+            {
+                sw.WriteLine($"# Exported Mesh {mesh.name} at {GetTimestampNow()}");
+                if (mesh.colors.IsNullOrEmpty())
+                {
+                    foreach (Vector3 vertex in mesh.vertices)
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z);
+                }
+                else
+                {
+                    for (int i = 0; i < mesh.vertexCount; ++i)
+                    {
+                        Vector3 vertex = mesh.vertices[i];
+                        Color color = mesh.colors[i];
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
+                    }
+                }
+
+                foreach (Vector3 normal in mesh.normals)
+                    sw.WriteLine("vn " + normal.x + " " + normal.y + " " + normal.z);
+
+                foreach (Vector2 uv in mesh.uv)
+                    sw.WriteLine("vt " + uv.x + " " + uv.y);
+
+                for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+                {
+                    int[] triangles = mesh.GetTriangles(submesh);
+                    for (int i = 0; i < triangles.Length; i += 3)
+                    {
+                        // OBJ indices start from 1, so add 1 to each index
+                        sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
+                            triangles[i] + 1, triangles[i + 1] + 1, triangles[i + 2] + 1));
+                    }
+                }
+                Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
+            }
         }
         public static void         SetAlpha             (this Image image, float alpha)
         {

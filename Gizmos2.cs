@@ -30,6 +30,7 @@ namespace sxg
         public static void DrawWireCircle   (Vector3 center, float radius, Vector3 normal, bool drawAxes = false)
         {
 #if (SEDITOR && UNITY_EDITOR)
+            UnityEditor.Handles.matrix = Gizmos.matrix;
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawWireDisc(center, normal, radius);
             if (drawAxes)
@@ -40,6 +41,7 @@ namespace sxg
                 Gizmos.DrawLine(center - axis1 * radius, center + axis1 * radius);
                 Gizmos.DrawLine(center - axis2 * radius, center + axis2 * radius);
             }
+            UnityEditor.Handles.matrix = Matrix4x4.identity;
 #endif
         }
 
@@ -296,7 +298,7 @@ namespace sxg
                 Handles.DrawWireDisc(Vector3.up * pointOffset, Vector3.up, radius);
                 Handles.DrawWireDisc(Vector3.down * pointOffset, Vector3.up, radius);
             }
-        }
 #endif
+        }
     }
 }

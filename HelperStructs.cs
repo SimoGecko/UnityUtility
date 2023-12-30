@@ -54,6 +54,12 @@ namespace sxg
         : this(t?.position ?? Vector3.zero, t?.rotation ?? Quaternion.identity)
         {
         }
+        //public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)
+        //{
+        //    Vector3 pos = Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime);
+        //    Quaternion rot = Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime);
+        //    return new(pos, rot);
+        //}
         public static Transf identity => new(Vector3.zero, Quaternion.identity);
 
         public static implicit operator Transf(Transform t)
@@ -96,8 +102,16 @@ namespace sxg
                 Vector3.Lerp(a.position, b.position, t),
                 Quaternion.Slerp(a.rotation, b.rotation, t));
         }
-        public Vector3 eulerAngles => rotation.eulerAngles;
-        public Vector3 axisAngle => rotation.ToAxisTimesAngle();
+        public Vector3 eulerAngles
+        {
+            get => rotation.eulerAngles;
+            set => rotation = Quaternion.Euler(value);
+        }
+        public Vector3 axisAngle
+        {
+            get => rotation.ToAxisTimesAngle();
+            set => rotation = Utility.QuaternionFromAxisTimesAngle(value);
+        }
 
         public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)// float maxSpeed, float deltaTime)
         {
@@ -318,6 +332,76 @@ namespace sxg
             Debug.Assert(0 <= a && a <= 360f);
             Debug.Assert(0 <= b && b <= 360f);
             return (a - b + 540f) % 360f - 180f;
+        }
+    }
+
+    [System.Serializable]
+    public struct PID3//<T>
+    {
+        [SerializeField] private float Kp; // proportional
+        [SerializeField] private float Kd; // derivative
+        [SerializeField] private float Ki; // integral
+        //[SerializeField] float integralSaturation; // prevents wind-up
+        //[SerializeField] Range outputRange; // clamps the output of the system
+        [SerializeField] private bool isAngle;
+
+        Vector3 errorLast, valueLast;
+        bool derivativeInitialized;
+        Vector3 I;
+
+        enum DerivativeMeasurement { Velocity, ErrorRateOfChange } // Velocity removes the Derivative Kick
+        static readonly DerivativeMeasurement derivativeMeasurement = DerivativeMeasurement.Velocity;
+
+        public Vector3 Update(Vector3 currentValue, Vector3 targetValue, float dt)
+        {
+            if (dt <= 0f)
+                return Vector3.zero;
+            Vector3 error = Difference(targetValue, currentValue);
+
+            // P (= spring)
+            Vector3 P = error;
+
+            // D (= dampener)
+            Vector3 D = Vector3.zero;
+            if (derivativeInitialized)
+            {
+                if (derivativeMeasurement == DerivativeMeasurement.Velocity)
+                {
+                    Vector3 valueRateOfChange = Difference(currentValue, valueLast) / dt;
+                    D = -valueRateOfChange;
+                }
+                else
+                {
+                    Vector3 errorRateOfChange = Difference(error, errorLast) / dt;
+                    D = errorRateOfChange;
+                }
+            }
+            else
+            {
+                derivativeInitialized = true;
+            }
+            valueLast = currentValue;
+            errorLast = error;
+
+
+            // I
+            I += error * dt;
+            //I = Mathf.Clamp(I, -integralSaturation, integralSaturation);
+
+            // result
+            Vector3 result = Kp * P + Kd * D + Ki * I;
+            //result = outputRange.Clamp(result);
+            return result;
+        }
+
+        Vector3 Difference(Vector3 a, Vector3 b)
+        {
+            return a - b;
+        }
+
+        public void Reset()
+        {
+            derivativeInitialized = false;
         }
     }
 
