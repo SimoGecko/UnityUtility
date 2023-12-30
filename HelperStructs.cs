@@ -373,48 +373,40 @@ namespace sxg
 
     ////////////////////////// SMOOTH ////////////////////////////////
     [System.Serializable]
-    public struct Smooth<T>
+    public struct Smoother<T>
     {
-        [ReadOnly] [SerializeField] private T target;
-        [ReadOnly] [SerializeField] private T value; // { get; private set; }
+        private T value;
         private T velocity;
-        public float time;
+        private float time;
 
+        public T Value { get => value; }
+        public float Time { get => time; set => time = value; }
 
-        public T Value => value;
-
-        public Smooth(T value, float time)
+        public Smoother(T value, float time)
         {
-            this.target = value;
             this.value = value;
             this.velocity = default(T);
             this.time = time;
         }
-        public void SetTarget(T target)
+
+        public void SetValueForced(T target)
         {
-            this.target = target;
-        }
-        public void SetTargetForced(T target)
-        {
-            this.target = target;
             value = target;
             velocity = default(T);
         }
-        public void SetTargetAndSmooth(T target)
-        {
-            this.target = target;
-            DoSmooth();
-        }
-        public void DoSmooth()
+
+        public T Update(T target)
         {
             var func = GenericHelper.Get<T>();
+            Debug.Assert(func != null);
             if (func != null)
             {
                 value = func.SmoothFunc(value, target, ref velocity, time);
             }
+            return value;
         }
 
-        public static implicit operator T(Smooth<T> x)
+        public static implicit operator T(Smoother<T> x)
         {
             return x.Value;
         }

@@ -128,53 +128,55 @@ namespace sxg
     {
         public Vector3 center;
         public float radius;
-        public float height;
-        Quaternion rot;
+        public float height; // top to bottom
+        //Quaternion rot;
 
         public Capsule(Vector3 center, float radius, float height)
+            :this(center, radius, height, Quaternion.identity) { }
+        public Capsule(Vector3 center, float radius, float height, Quaternion rot)
         {
             this.center = center;
             this.radius = radius;
             this.height = height;
-            rot = Quaternion.identity;
+            //this.rot = rot;
         }
         public Capsule(CapsuleCollider collider)
         {
-            this.center = collider.center;
-            this.radius = collider.radius;
-            this.height = collider.height;
-            rot = Quaternion.identity;
+            center = collider.center;
+            radius = collider.radius;
+            height = collider.height;
+            //rot = Quaternion.identity;
         }
         public Capsule(Capsule other)
         {
-            this.center = other.center;
-            this.radius = other.radius;
-            this.height = other.height;
-            rot = Quaternion.identity;
+            center = other.center;
+            radius = other.radius;
+            height = other.height;
+            //rot = other.rot;
         }
+
+        public Quaternion rotation => Quaternion.identity;
+        public Vector3 Axis => rotation * Vector3.up;
+        public Vector3 Top    => center + Axis * height / 2f;
+        public Vector3 Bottom => center - Axis * height / 2f;
 
         public float HalfBodyHeight => Mathf.Max(height / 2f - radius, 0f);
         public Vector3 Point1 => center + Axis * HalfBodyHeight;
         public Vector3 Point2 => center - Axis * HalfBodyHeight;
-        public Vector3 Axis => rot * Vector3.up;
-        public Quaternion rotation => rot;
 
-        public Vector3 Top    => center + Axis * (HalfBodyHeight + radius);
-        public Vector3 Bottom => center - Axis * (HalfBodyHeight + radius);
 
-        public void Transform(Transform t)
+        // They should be immutable
+        public Capsule Transform(Transform t)
         {
-            center = t.TransformPoint(center);
-            rot = t.rotation;
+            return new(t.TransformPoint(center), radius, height, t.rotation * rotation);
         }
-        public void Translate(Vector3 delta)
+        public Capsule Translate(Vector3 delta)
         {
-            center += delta;
+            return new(center + delta, radius, height);
         }
-        public void Expand(float delta)
+        public Capsule Expand(float delta)
         {
-            radius += delta;
-            height += delta * 2f;
+            return new(center, radius + delta, height + delta * 2f);
         }
     }
 

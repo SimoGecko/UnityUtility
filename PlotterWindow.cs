@@ -26,11 +26,13 @@ namespace sxg
             GetWindow<VariablePlotterWindow>("Variable Plotter");
         }
 
-        public void SetTargetObject(GameObject newTargetObject)
+        public void SetTargetObject(GameObject newTargetObject, bool force = false)
         {
-            if (newTargetObject != targetObject)
+            if (newTargetObject != targetObject || force)
             {
                 targetObject = newTargetObject;
+                if (targetObject == null)
+                    return;
                 plots = GetPlots().ToArray();
                 table = new();
                 foreach (PlotData data in plots)
@@ -103,6 +105,7 @@ namespace sxg
         float nextDrawTime;
         private void Awake()
         {
+            SetTargetObject(targetObject, true);
             nextDrawTime = 0f;
         }
 
@@ -180,7 +183,7 @@ namespace sxg
         public bool sameGraph;
         public string label;
 
-        public PlotAttribute(string color = "red", bool sameGraph = false, string label = null)
+        public PlotAttribute(string color = "red", string label = null, bool sameGraph = false)
             : this(-1f, 1f, color, sameGraph, label)
         {
             autoRange = true;

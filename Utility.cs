@@ -35,7 +35,7 @@ namespace sxg
         }
         public static float        Sign                 (this float value)
         {
-            return Mathf.Abs(value) <= eps ? 0f : value > 0f ? 1f : -1f;
+            return value > eps ? 1f : value < -eps ? -1f : 0f;
         }
         public static int          SignNo0              (this int value)
         {
@@ -71,7 +71,9 @@ namespace sxg
         }
         public static float        Truncate             (this float value, float max)
         {
-            return Mathf.Sign(value) * Mathf.Min(value, max);
+            if (Mathf.Abs(value) > max)
+                return Mathf.Sign(value) * max;
+            return value;
         }
         public static float        Truncate             (this float value, float min, float max)
         {
@@ -311,7 +313,10 @@ namespace sxg
         ////////////////////////// VECTOR2 ////////////////////////////////
         public static Vector2      Truncate             (this Vector2 vector, float max)
         {
-            return vector.normalized * Mathf.Min(vector.magnitude, max);
+            Debug.Assert(max >= 0f);
+            if (vector.sqrMagnitude > max * max)
+                return vector.normalized * max;
+            return vector;
         }
         public static Vector2      Clamp                (this Vector2 vector, float min, float max)
         {
@@ -353,7 +358,6 @@ namespace sxg
             vector.y = (sin * tx) + (cos * ty);
             return vector;
         }
-
         public static Vector2      Rotate90             (this Vector2 vector)
         {
             return new Vector2(-vector.y, vector.x);
@@ -409,18 +413,21 @@ namespace sxg
         {
             return Vector3.Cross(a, b).IsZero();
         }
-        public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
+        public static Vector3      GetTangent           (this Vector3 vector)
         {
             Vector3 normal = vector.normalized;
 
             // Choose another vector not parallel
-            tangent = (Mathf.Abs(normal.x) < 0.9f) ? xAxis : yAxis;
+            Vector3 tangent = (Mathf.Abs(normal.x) < 0.9f) ? xAxis : yAxis;
 
-            // Remove the part that is parallel to Z
+            // Remove the part that is parallel to vector
             tangent -= normal * Vector3.Dot(normal, tangent);
-            tangent.Normalize();
-
-            bitangent = Vector3.Cross(normal, tangent);
+            return tangent.normalized;
+        }
+        public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
+        {
+            tangent = GetTangent(vector);
+            bitangent = Vector3.Cross(vector, tangent).normalized;
         }
         public static Vector3      Y                    (this Vector3 vector)
         {
@@ -456,13 +463,24 @@ namespace sxg
         }
         public static bool         IsUnit               (this Vector3 vector)
         {
-            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps * eps;
+            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps;
         }
         public static void         Deconstruct          (this Vector3 vector, out float x, out float y, out float z)
         {
             x = vector.x;
             y = vector.y;
             z = vector.z;
+        }
+        public static Vector3      Truncate             (this Vector3 vector, float max)
+        {
+            Debug.Assert(max >= 0f);
+            if (vector.sqrMagnitude > max * max)
+                return vector.normalized * max;
+            return vector;
+        }
+        public static Vector3      Clamp                (this Vector3 vector, float min, float max)
+        {
+            return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
 
         public static Vector3      xAxis                => Vector3.right;
@@ -557,16 +575,60 @@ namespace sxg
         {
             return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y);
         }
-        public static bool FuzzyEq(this Vector3 v, Vector3 o)
+        public static bool         FuzzyEq               (this Vector3 v, Vector3 o)
         {
             return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y) && FuzzyEq(v.z, o.z);
         }
-        public static bool FuzzyEq(this Matrix4x4 m1, Matrix4x4 m2)
+        public static bool         FuzzyEq               (this Matrix4x4 m1, Matrix4x4 m2)
         {
             for (int i = 0; i < 16; ++i)
                 if (!FuzzyEq(m1[i], m2[i]))
                     return false;
             return true;
+        }
+
+        public static bool         FuzzyLt               (this float a, float b)
+        {
+            return a < b + eps;
+        }
+        public static bool         FuzzyGt               (this float a, float b)
+        {
+            return a > b - eps;
+        }
+        public static bool         FuzzyLe               (this float a, float b)
+        {
+            return a <= b + eps;
+        }
+        public static bool         FuzzyGe               (this float a, float b)
+        {
+            return a >= b - eps;
+        }
+        public static bool         FuzzyNe               (this float a, float b)
+        {
+            return Mathf.Abs(a - b) > eps;
+        }
+
+
+        ////////////////////////// LERP INTERPOLATION ////////////////////////////////
+        private static float       GlerpAlpha           (float time, float dt)
+        {
+            // original: 1-e^(-speed * dt)
+            // using time = 1/speed. The 5x is because it takes 5x the time to reach 99.3%
+            // speed = 5/time =>  time = 5/speed
+            return time == 0f ? 1f : 1f - Mathf.Exp(-5f / time * dt);
+        }
+        public static float        Glerp                (float a, float b, float time, float dt)
+            => Mathf.Lerp(a, b, GlerpAlpha(time, dt));
+        public static Vector2      Glerp                (Vector2 a, Vector2 b, float time, float dt)
+            => Vector2.Lerp(a, b, GlerpAlpha(time, dt));
+        public static Vector3      Glerp                (Vector3 a, Vector3 b, float time, float dt)
+            => Vector3.Lerp(a, b, GlerpAlpha(time, dt));
+        public static Quaternion   Glerp                (Quaternion a, Quaternion b, float time, float dt)
+            => Quaternion.Slerp(a, b, GlerpAlpha(time, dt));
+        public static Transf       Glerp                (Transf a, Transf b, float time, float dt)
+        {
+            float t = GlerpAlpha(time, dt);
+            return new(Vector3.Lerp(a.position, b.position, t), Quaternion.Slerp(a.rotation, b.rotation, t));
         }
 
 
@@ -1690,13 +1752,13 @@ namespace sxg
         {
             switch (mode)
             {
-            case ForceMode.Force:
+            case ForceMode.Force: // N=kg*m/s^2 -> rb.velocity += value * dt / mass
                 return value;
-            case ForceMode.Acceleration:
-                return value * mass; // F = ma
-            case ForceMode.Impulse:
+            case ForceMode.Acceleration: // m/s^2 -> rb.velocity += value * dt
+                return value * mass;
+            case ForceMode.Impulse: // momentum=kg*m/s -> rb.velocity += value / mass
                 return value / dt;
-            case ForceMode.VelocityChange:
+            case ForceMode.VelocityChange: // m/s -> rb.velocity += value
                 return value * mass / dt;
             }
             Debug.Assert(false);
@@ -1705,6 +1767,24 @@ namespace sxg
         public static float        ConvertToForce       (float value, ForceMode mode, float mass, float dt)
             => ConvertToForce(new Vector3(value, 0f, 0f), mode, mass, dt).x;
 
+
+        // from https://discussions.unity.com/t/force-to-velocity-scaling/120739/3
+        public static float GetFinalVelocity(float aVelocityChange, float aDrag)
+        {
+            return aVelocityChange * (1 / Mathf.Clamp01(aDrag * Time.fixedDeltaTime) - 1);
+        }
+        public static float GetFinalVelocityFromAcceleration(float aAcceleration, float aDrag)
+        {
+            return GetFinalVelocity(aAcceleration * Time.fixedDeltaTime, aDrag);
+        }
+        public static float GetDrag(float aVelocityChange, float aFinalVelocity)
+        {
+            return aVelocityChange / ((aFinalVelocity + aVelocityChange) * Time.fixedDeltaTime);
+        }
+        public static float GetDragFromAcceleration(float aAcceleration, float aFinalVelocity)
+        {
+            return GetDrag(aAcceleration * Time.fixedDeltaTime, aFinalVelocity);
+        }
 
         ////////////////////////// RIGIDBODY 2D ////////////////////////////////
         public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)

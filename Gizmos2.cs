@@ -3,6 +3,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
+using System.Linq;
 
 ////////// PURPOSE: Various Gizmos utility functions //////////
 
@@ -134,6 +135,10 @@ namespace sxg
 #endif
         }
 
+        public static void DrawPath         (Vector2[] points, bool closed = false)
+        {
+            DrawPath(points.Select(p => (Vector3)p).ToArray(), closed);
+        }
         public static void DrawPath         (Vector3[] points, bool closed = false)
         {
             if (points == null)

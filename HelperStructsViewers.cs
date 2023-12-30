@@ -82,7 +82,7 @@ namespace sxg
         }
     }
 
-    [CustomPropertyDrawer(typeof(Smooth<float>))]
+    [CustomPropertyDrawer(typeof(Smoother<float>))]
     public class SmoothFloatDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
