@@ -2,6 +2,7 @@
 
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 
 ////////// PURPOSE: Various Gizmos utility functions //////////
 
@@ -214,8 +215,10 @@ namespace sxg
 
         public static void DrawDottedLine(Vector3 from, Vector3 to, float screenSpaceSize = 5f)
         {
+#if (SEDITOR && UNITY_EDITOR)
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawDottedLine(from, to, screenSpaceSize);
+#endif
         }
 
         public static void DrawFrustum(Frustum frustum)
@@ -248,6 +251,49 @@ namespace sxg
             Gizmos.matrix = Matrix4x4.LookAt(o, o + n, Vector3.up);
             Gizmos.DrawCube(Vector3.zero, new Vector3(1f, 1f, 0f) * size);
             Gizmos.matrix = Matrix4x4.identity;
+        }
+
+        public static void DrawPoint(Vector3 point, float size)
+        {
+            DrawCross(point, size);
+        }
+        public static void DrawCross(Vector3 point, float size)
+        {
+            float radius = size / 2f;
+            Gizmos.DrawLine(point - Vector3.right * radius, point + Vector3.right * radius);
+            Gizmos.DrawLine(point - Vector3.up * radius, point + Vector3.up * radius);
+            Gizmos.DrawLine(point - Vector3.forward * radius, point + Vector3.forward * radius);
+        }
+
+        public static void DrawWireCapsule(Capsule capsule)
+        {
+            DrawWireCapsule(capsule.center, capsule.rotation, capsule.radius, capsule.height);
+        }
+        public static void DrawWireCapsule(Vector3 pos, Quaternion rot, float radius, float height)
+        {
+#if (SEDITOR && UNITY_EDITOR)
+            // from https://forum.unity.com/threads/drawing-capsule-gizmo.354634/
+            Handles.color = Gizmos.color;
+            Matrix4x4 angleMatrix = Matrix4x4.TRS(pos, rot, Handles.matrix.lossyScale);
+            using (new Handles.DrawingScope(angleMatrix))
+            {
+                var pointOffset = (height - (radius * 2)) / 2;
+
+                //draw sideways
+                Handles.DrawWireArc(Vector3.up * pointOffset, Vector3.left, Vector3.back, -180, radius);
+                Handles.DrawLine(new Vector3(0, pointOffset, -radius), new Vector3(0, -pointOffset, -radius));
+                Handles.DrawLine(new Vector3(0, pointOffset, radius), new Vector3(0, -pointOffset, radius));
+                Handles.DrawWireArc(Vector3.down * pointOffset, Vector3.left, Vector3.back, 180, radius);
+                //draw frontways
+                Handles.DrawWireArc(Vector3.up * pointOffset, Vector3.back, Vector3.left, 180, radius);
+                Handles.DrawLine(new Vector3(-radius, pointOffset, 0), new Vector3(-radius, -pointOffset, 0));
+                Handles.DrawLine(new Vector3(radius, pointOffset, 0), new Vector3(radius, -pointOffset, 0));
+                Handles.DrawWireArc(Vector3.down * pointOffset, Vector3.back, Vector3.left, -180, radius);
+                //draw center
+                Handles.DrawWireDisc(Vector3.up * pointOffset, Vector3.up, radius);
+                Handles.DrawWireDisc(Vector3.down * pointOffset, Vector3.up, radius);
+            }
+#endif
         }
     }
 }

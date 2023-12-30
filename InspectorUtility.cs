@@ -162,6 +162,7 @@ namespace sxg
             var mono = target as MonoBehaviour;
             if (Attribute.GetCustomAttribute(mono.GetType(), typeof(TabHierarchyAttribute), true) == null)
             {
+                // TODO: add tabs
                 base.OnInspectorGUI();
                 ButtonDrawerHelper.DrawButtonsForType(mono.GetType(), mono);
             }

@@ -20,7 +20,7 @@ namespace sxg
     // Naming: Get / Find / Compute / 
     public static partial class Utility
     {
-
+        static float eps = 1e-4f;
         ////////////////////////// MATH ////////////////////////////////
         public static int          Mod                  (this int value, int mod)
         {
@@ -36,7 +36,7 @@ namespace sxg
         }
         public static float        Sign                 (this float value)
         {
-            return Mathf.Abs(value) < 0.0001f ? 0f : value > 0f ? 1f : -1f;
+            return Mathf.Abs(value) <= eps ? 0f : value > 0f ? 1f : -1f;
         }
         public static int          SignNo0              (this int value)
         {
@@ -80,7 +80,7 @@ namespace sxg
         }
         public static bool         IsClose              (this float value, float value2)
         {
-            return Mathf.Abs(value-value2) < 0.0001f;
+            return Mathf.Abs(value-value2) <= eps;
         }
         public static float        SumProduct           (float[] a, float[] b)
         {
@@ -410,7 +410,6 @@ namespace sxg
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
-        private static float eps = 0.001f;
         public static Vector2      To2                  (this Vector3 vector)
         {
             return new Vector2(vector.x, vector.z);
@@ -597,7 +596,7 @@ namespace sxg
             q.ToAngleAxis(out float angle, out Vector3 axis);
             return axis * angle;
         }
-        public static Quaternion QuaternionFromAxisTimesAngle(this Vector3 v)
+        public static Quaternion   QuaternionFromAxisTimesAngle(this Vector3 v)
         {
             if (v.IsZero())
                 return Quaternion.identity;
@@ -605,13 +604,28 @@ namespace sxg
             Vector3 axis = v / angle;
             return Quaternion.AngleAxis(angle, axis);
         }
+        public static Quaternion   SmoothDamp           (Quaternion current, Quaternion target, ref Quaternion currentVelocity, float smoothTime)//, float maxSpeed = -1f, float deltaTime = -1f)
+        {
+            Quaternion changeQuat = current * target.Inverse();
+            changeQuat.ToAngleAxis(out float angle, out Vector3 axis);
+            Vector3 change = angle * axis;
+            Vector3 imag = new(currentVelocity.x, currentVelocity.y, currentVelocity.z);
+            Vector3 angularStep = Vector3.SmoothDamp(change, Vector3.zero, ref imag, smoothTime);//, maxSpeed, deltaTime);
+            currentVelocity = new Quaternion(imag.x, imag.y, imag.z, 0f);
+
+            angle = angularStep.magnitude;
+            Quaternion step = angle <= eps  ? Quaternion.identity : Quaternion.AngleAxis(angle, angularStep / angle);
+            Quaternion output = step * target;
+            output.Normalize();
+            return output;
+        }
 
 
         ////////////////////////// FUZZY MATH ////////////////////////////////
         public static bool         FuzzyEq               (this float a, float b)
         {
             //return Mathf.Approximately(a, b);
-            return Mathf.Abs(a - b) < 0.0001f;
+            return Mathf.Abs(a - b) <= eps;
         }
         public static bool         FuzzyEq               (this Vector2 v, Vector2 o)
         {
@@ -688,7 +702,7 @@ namespace sxg
         }
         public static float        SampleNormal()
         {
-            //Avoid getting u == 0.0
+            //Avoid getting u == 0
             float u1 = 0f, u2 = 0f;
             while (u1 < Mathf.Epsilon || u2 < Mathf.Epsilon)
             {
@@ -1056,6 +1070,10 @@ namespace sxg
         {
             return Enumerable.Empty<T>();
         }
+        public static T            GetMod<T>            (this IEnumerable<T> enumerable, int index)
+        {
+            return enumerable.ElementAt(index.Mod(enumerable.Count()));
+        }
 
 
         ////////////////////////// GEOMETRY ////////////////////////////////
@@ -1134,13 +1152,12 @@ namespace sxg
         {
             Vector2 d0 = (p1 - p0).normalized;
             Vector2 d1 = (p2 - p1).normalized;
-            const float tolerance = 1f - 0.01f;
             float dot = Vector2.Dot(d0, d1);
-            if (dot >= tolerance) // collinear
+            if (dot >= 1f - eps) // collinear
             {
                 return p1 + d0.Rotate90() * offset;
             }
-            else if (dot <= -tolerance) // opposite
+            else if (dot <= -1f + eps) // opposite
             {
                 return p1 - d0 * offset;
             }
@@ -1158,12 +1175,11 @@ namespace sxg
             // NOTES: d is coming TOWARDS the center, r is going AWAY from it (like raycasting)
             // thanks wolframalpha
             float dot = Vector2.Dot(d, r);
-            const float tolerance = 0.001f;
-            if (dot > 1f - tolerance) // collinear
+            if (dot > 1f - eps) // collinear
             {
                 return d.Rotate90();
             }
-            else if (dot < -1f + tolerance) // opposite
+            else if (dot < -1f + eps) // opposite
             {
                 return -d;
             }
@@ -1206,7 +1222,7 @@ namespace sxg
 
             float e = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
 
-            if (e == 0.0f)
+            if (e == 0f)
             {
                 return false;
             }
@@ -1214,7 +1230,7 @@ namespace sxg
             float u = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / e;
             float v = ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)) / e;
 
-            if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f)
+            if (u < 0f || u > 1f || v < 0f || v > 1f)
             {
                 return false;
             }
@@ -1253,7 +1269,7 @@ namespace sxg
         public static float        FindSegmentDistanceToPointSquared  (Vector2 a, Vector2 b, Vector2 p)
         {
             float l2 = (a - b).sqrMagnitude;
-            if (Mathf.Abs(l2) < 0.0001f) return (p - a).sqrMagnitude;
+            if (Mathf.Abs(l2) < eps) return (p - a).sqrMagnitude;
             float t = Mathf.Clamp01(Vector2.Dot(p - a, b - a) / l2);
             Vector2 projection = a + t * (b - a);
             return (p - projection).sqrMagnitude;
@@ -1335,7 +1351,8 @@ namespace sxg
         {
             Vector3 forward = transform.forward;
             forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f) return 0f;
+            if (forward.sqrMagnitude < eps)
+                return 0f;
             float heading = Vector3.SignedAngle(Vector3.forward, forward, Vector3.up);
             return heading;
         }
@@ -1451,6 +1468,15 @@ namespace sxg
                 child.Reset();
             }
             return child;
+        }
+        public static void         ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
+        {
+            transform.ForeachDescendant(t =>
+            {
+                T comp = t.GetComponent<T>();
+                if (comp != null)
+                    action(comp);
+            }, includeSelf);
         }
         public static void         ForeachDescendant    (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
@@ -1712,14 +1738,14 @@ namespace sxg
         }
         public static void         SetVelocity          (this Rigidbody rb, Vector3 velocity)
         {
-            rb.velocity = Vector3.zero;
-            rb.AddForce(velocity, ForceMode.VelocityChange);
+            rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody rb, Vector3 acceleration)
         {
             rb.AddForce(acceleration, ForceMode.Acceleration);
         }
-        public static void         AddAccelerationMaxVelocity(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
+
+        public static void         AddAccelerationMaxVelocity_DEPRECATED(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
         {
             float speedDelta = maxVelocity - rb.velocity.magnitude;
             if (speedDelta > 0f)
@@ -1732,9 +1758,9 @@ namespace sxg
                 rb.AddForce(acceleration, ForceMode.Acceleration);
             }
         }
-        public static void         Brake                (this Rigidbody rb, float breakAcc)
+        public static void         Brake_DEPRECATED     (this Rigidbody rb, float breakAcc)
         {
-            if (rb.velocity.magnitude > 0.0001f)
+            if (rb.velocity.magnitude > eps)
             {
                 float maxAccNeeded = rb.velocity.magnitude / Time.fixedDeltaTime;
                 //acceleration += -velocity.normalized * maxAcceleration;//Mathf.Min(maxAccNeeded, breakAcc);
@@ -1744,91 +1770,73 @@ namespace sxg
         }
         public static void         AddRelativeForceAtPosition(this Rigidbody rb, Vector3 force, Vector3 position, ForceMode mode)
         {
-            Vector3 forceW = rb.transform.TransformVector(force);
-            Vector3 posW = rb.transform.TransformPoint(position);
-            rb.AddForceAtPosition(forceW, posW, mode);
+            Vector3 forceWorld = rb.transform.TransformVector(force);
+            Vector3 posWorld   = rb.transform.TransformPoint(position);
+            rb.AddForceAtPosition(forceWorld, posWorld, mode);
         }
 
-        ////////////////////////// RIGIDBODY 2D ////////////////////////////////
-
-        public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
+        public static Vector3      ConvertToForce       (Vector3 value, ForceMode mode, float mass, float dt)
         {
             switch (mode)
             {
             case ForceMode.Force:
-                rb.AddForce(force);
-                break;
-            case ForceMode.Impulse:
-                rb.AddForce(force / Time.fixedDeltaTime);
-                break;
+                return value;
             case ForceMode.Acceleration:
-                rb.AddForce(force * rb.mass);
-                break;
+                return value * mass; // F = ma
+            case ForceMode.Impulse:
+                return value / dt;
             case ForceMode.VelocityChange:
-                rb.AddForce(force * rb.mass / Time.fixedDeltaTime);
-                break;
+                return value * mass / dt;
             }
+            Debug.Assert(false);
+            return Vector3.zero;
+        }
+        public static float        ConvertToForce       (float value, ForceMode mode, float mass, float dt)
+            => ConvertToForce(new Vector3(value, 0f, 0f), mode, mass, dt).x;
+
+
+        ////////////////////////// RIGIDBODY 2D ////////////////////////////////
+        public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
+        {
+            rb.AddForce(ConvertToForce(force, mode, rb.mass, Time.fixedDeltaTime));
         }
         public static void         AddRelativeForce     (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddRelativeForce(force);
-                break;
-            case ForceMode.Impulse:
-                rb.AddRelativeForce(force / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddRelativeForce(force * rb.mass);
-                break;
-            case ForceMode.VelocityChange:
-                rb.AddRelativeForce(force * rb.mass / Time.fixedDeltaTime);
-                break;
-            }
+            rb.AddRelativeForce(ConvertToForce(force, mode, rb.mass, Time.fixedDeltaTime));
         }
         public static void         AddTorque            (this Rigidbody2D rb, float torque, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddTorque(torque);
-                break;
-            case ForceMode.Impulse:
-                rb.AddTorque(torque / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddTorque(torque * rb.inertia);
-                break;
-            case ForceMode.VelocityChange:
-                //rb.AddTorque(torque * rb.inertia / Time.fixedDeltaTime);
-                rb.angularVelocity += torque;
-                break;
-            }
+            rb.AddTorque(ConvertToForce(torque, mode, rb.inertia, Time.fixedDeltaTime));
         }
         public static void         AddVelocity          (this Rigidbody2D rb, Vector2 velocity)
         {
-            rb.velocity += velocity;
+            rb.AddForce(velocity, ForceMode.VelocityChange);
         }
         public static void         SetVelocity          (this Rigidbody2D rb, Vector2 velocity)
         {
-            rb.velocity = velocity;
+            rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody2D rb, Vector2 acceleration)
         {
-            rb.AddForce(acceleration * rb.mass);
+            rb.AddForce(acceleration, ForceMode.Acceleration);
         }
         public static void         AddRelativeAcceleration(this Rigidbody2D rb, Vector2 acceleration)
         {
-            rb.AddRelativeForce(acceleration * rb.mass);
+            rb.AddRelativeForce(acceleration, ForceMode.Acceleration);
         }
-        public static void         AddTorqueToReachRotation(this Rigidbody2D rb, float targetRotation, float maxTorque)
+        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
+        {
+            rb.velocity = other.velocity;
+            rb.angularVelocity = other.angularVelocity;
+        }
+
+        public static void         AddTorqueToReachRotation_DEPRECATED(this Rigidbody2D rb, float targetRotation, float maxTorque)
         {
             float deltaAngle = Mathf.DeltaAngle(rb.rotation, targetRotation); // todo: ensure in [-180, 180
             float torque = Math.Clamp(deltaAngle, -maxTorque, maxTorque);
             rb.AddTorque(torque, ForceMode2D.Force);
         }
-        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime(float velocityMax, float timeToVelocityMax)
+        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime_DEPRECATED(float velocityMax, float timeToVelocityMax)
         {
             float v = velocityMax;
             float T = timeToVelocityMax;
@@ -1838,11 +1846,6 @@ namespace sxg
             float d = (1f - Mathf.Exp(Mathf.Log(1f - p) * t / T)) / t;
             float a = v * d;
             return (a, d);
-        }
-        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
-        {
-            rb.velocity = other.velocity;
-            rb.angularVelocity = other.angularVelocity;
         }
 
 
@@ -2218,6 +2221,45 @@ namespace sxg
             System.IO.File.WriteAllBytes(fullpath, _bytes);
             Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
         }
+        public static void ExportMeshAsObj(this Mesh mesh, string fullpath)
+        {
+            using (StreamWriter sw = new StreamWriter(fullpath))
+            {
+                sw.WriteLine($"# Exported Mesh {mesh.name} at {GetTimestampNow()}");
+                if (mesh.colors.IsNullOrEmpty())
+                {
+                    foreach (Vector3 vertex in mesh.vertices)
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z);
+                }
+                else
+                {
+                    for (int i = 0; i < mesh.vertexCount; ++i)
+                    {
+                        Vector3 vertex = mesh.vertices[i];
+                        Color color = mesh.colors[i];
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
+                    }
+                }
+
+                foreach (Vector3 normal in mesh.normals)
+                    sw.WriteLine("vn " + normal.x + " " + normal.y + " " + normal.z);
+
+                foreach (Vector2 uv in mesh.uv)
+                    sw.WriteLine("vt " + uv.x + " " + uv.y);
+
+                for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+                {
+                    int[] triangles = mesh.GetTriangles(submesh);
+                    for (int i = 0; i < triangles.Length; i += 3)
+                    {
+                        // OBJ indices start from 1, so add 1 to each index
+                        sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
+                            triangles[i] + 1, triangles[i + 1] + 1, triangles[i + 2] + 1));
+                    }
+                }
+                Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
+            }
+        }
         public static void         SetAlpha             (this Image image, float alpha)
         {
             if (image == null) return;
@@ -2319,13 +2361,14 @@ namespace sxg
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
+        private static string F(float value) => $"{value:0.00000}f";
         public static string       Prettify(this Vector3 v)
         {
-            return $"Vector3({v.x:0.00000}f, {v.y:0.00000}f, {v.z:0.00000}f)";
+            return $"Vector3({F(v.x)}, {F(v.y)}, {F(v.z)})";
         }
         public static string       Prettify(this Quaternion q)
         {
-            return $"Quat({q.x:0.00000}f, {q.y:0.00000}f, {q.z:0.00000}f, {q.w:0.00000}f)";
+            return $"Quat({F(q.x)}, {F(q.y)}, {F(q.z)}, {F(q.w)})";
         }
         public static void SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
         {
