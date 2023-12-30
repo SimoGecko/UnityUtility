@@ -157,13 +157,14 @@ namespace sxg
         [MenuItem("Tools/Splay Children/25")]  public static void SplayChildren_25() { SplayChildren(25f); }
         [MenuItem("Tools/Splay Children/50")]  public static void SplayChildren_50() { SplayChildren(50f); }
         [MenuItem("Tools/Splay Children/100")] public static void SplayChildren_100() { SplayChildren(100f); }
+        [MenuItem("Tools/Splay Children/Custom")] public static void SplayChildren_Custom() { SplayChildren(0.5f, 10); }
 
 
-        public static void SplayChildren(float amount)
+        public static void SplayChildren(float amount, int rows = -1)
         {
             foreach (GameObject go in Selection.gameObjects)
             {
-                Utility.SplayChildren(go.transform, amount);
+                Utility.SplayChildren(go.transform, amount, rows);
             }
         }
 

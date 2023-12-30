@@ -123,4 +123,61 @@ namespace sxg
         public Matrix4x4 Matrix => localToWorldMatrix;
     }
 
+    [System.Serializable]
+    public struct Capsule // currently assumed to be about the Y index
+    {
+        public Vector3 center;
+        public float radius;
+        public float height; // top to bottom
+        //Quaternion rot;
+
+        public Capsule(Vector3 center, float radius, float height)
+            :this(center, radius, height, Quaternion.identity) { }
+        public Capsule(Vector3 center, float radius, float height, Quaternion rot)
+        {
+            this.center = center;
+            this.radius = radius;
+            this.height = height;
+            //this.rot = rot;
+        }
+        public Capsule(CapsuleCollider collider)
+        {
+            center = collider.center;
+            radius = collider.radius;
+            height = collider.height;
+            //rot = Quaternion.identity;
+        }
+        public Capsule(Capsule other)
+        {
+            center = other.center;
+            radius = other.radius;
+            height = other.height;
+            //rot = other.rot;
+        }
+
+        public Quaternion rotation => Quaternion.identity;
+        public Vector3 Axis => rotation * Vector3.up;
+        public Vector3 Top    => center + Axis * height / 2f;
+        public Vector3 Bottom => center - Axis * height / 2f;
+
+        public float HalfBodyHeight => Mathf.Max(height / 2f - radius, 0f);
+        public Vector3 Point1 => center + Axis * HalfBodyHeight;
+        public Vector3 Point2 => center - Axis * HalfBodyHeight;
+
+
+        // They should be immutable
+        public Capsule Transform(Transform t)
+        {
+            return new(t.TransformPoint(center), radius, height, t.rotation * rotation);
+        }
+        public Capsule Translate(Vector3 delta)
+        {
+            return new(center + delta, radius, height);
+        }
+        public Capsule Expand(float delta)
+        {
+            return new(center, radius + delta, height + delta * 2f);
+        }
+    }
+
 }

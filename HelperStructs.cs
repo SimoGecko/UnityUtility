@@ -28,7 +28,7 @@ namespace sxg
 
     ////////////////////////// TRANSF ////////////////////////////////
     [System.Serializable]
-    public struct Transf
+    public struct Transf // TODO: rename CFrame
 #if SNETCODE
         : INetworkSerializable
 #endif
@@ -41,12 +41,31 @@ namespace sxg
             this.position = position;
             this.rotation = rotation;
         }
+        public Transf(Vector3 position, Vector3 euler)
+            : this(position, Quaternion.Euler(euler))
+        {
+        }
+        public Transf(Vector3 position)
+            : this(position, Quaternion.identity)
+        {
+        }
 
         public Transf(Transform t)
         : this(t?.position ?? Vector3.zero, t?.rotation ?? Quaternion.identity)
         {
         }
+        //public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)
+        //{
+        //    Vector3 pos = Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime);
+        //    Quaternion rot = Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime);
+        //    return new(pos, rot);
+        //}
+        public static Transf identity => new(Vector3.zero, Quaternion.identity);
 
+        public static implicit operator Transf(Transform t)
+        {
+            return new(t);
+        }
 #if SNETCODE
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -58,6 +77,14 @@ namespace sxg
         public static Transf operator*(Transf a, Transf b)
         {
             return new Transf(a.position + (a.rotation * b.position), a.rotation * b.rotation);
+        }
+        public static Transf operator *(Transf a, Transform b)
+        {
+            return a * new Transf(b);
+        }
+        public static Transf operator *(Transform a, Transf b)
+        {
+            return new Transf(a) * b;
         }
 
         public Transf inverse
@@ -74,6 +101,23 @@ namespace sxg
             return new Transf(
                 Vector3.Lerp(a.position, b.position, t),
                 Quaternion.Slerp(a.rotation, b.rotation, t));
+        }
+        public Vector3 eulerAngles
+        {
+            get => rotation.eulerAngles;
+            set => rotation = Quaternion.Euler(value);
+        }
+        public Vector3 axisAngle
+        {
+            get => rotation.ToAxisTimesAngle();
+            set => rotation = Utility.QuaternionFromAxisTimesAngle(value);
+        }
+
+        public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)// float maxSpeed, float deltaTime)
+        {
+            return new Transf(
+                Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime),
+                Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime));
         }
     }
 
@@ -291,6 +335,76 @@ namespace sxg
         }
     }
 
+    [System.Serializable]
+    public struct PID3//<T>
+    {
+        [SerializeField] private float Kp; // proportional
+        [SerializeField] private float Kd; // derivative
+        [SerializeField] private float Ki; // integral
+        //[SerializeField] float integralSaturation; // prevents wind-up
+        //[SerializeField] Range outputRange; // clamps the output of the system
+        [SerializeField] private bool isAngle;
+
+        Vector3 errorLast, valueLast;
+        bool derivativeInitialized;
+        Vector3 I;
+
+        enum DerivativeMeasurement { Velocity, ErrorRateOfChange } // Velocity removes the Derivative Kick
+        static readonly DerivativeMeasurement derivativeMeasurement = DerivativeMeasurement.Velocity;
+
+        public Vector3 Update(Vector3 currentValue, Vector3 targetValue, float dt)
+        {
+            if (dt <= 0f)
+                return Vector3.zero;
+            Vector3 error = Difference(targetValue, currentValue);
+
+            // P (= spring)
+            Vector3 P = error;
+
+            // D (= dampener)
+            Vector3 D = Vector3.zero;
+            if (derivativeInitialized)
+            {
+                if (derivativeMeasurement == DerivativeMeasurement.Velocity)
+                {
+                    Vector3 valueRateOfChange = Difference(currentValue, valueLast) / dt;
+                    D = -valueRateOfChange;
+                }
+                else
+                {
+                    Vector3 errorRateOfChange = Difference(error, errorLast) / dt;
+                    D = errorRateOfChange;
+                }
+            }
+            else
+            {
+                derivativeInitialized = true;
+            }
+            valueLast = currentValue;
+            errorLast = error;
+
+
+            // I
+            I += error * dt;
+            //I = Mathf.Clamp(I, -integralSaturation, integralSaturation);
+
+            // result
+            Vector3 result = Kp * P + Kd * D + Ki * I;
+            //result = outputRange.Clamp(result);
+            return result;
+        }
+
+        Vector3 Difference(Vector3 a, Vector3 b)
+        {
+            return a - b;
+        }
+
+        public void Reset()
+        {
+            derivativeInitialized = false;
+        }
+    }
+
 
     ////////////////////////// RANGE ////////////////////////////////
     [System.Serializable]
@@ -304,6 +418,7 @@ namespace sxg
             this.max = max;
         }
 
+        public float Random => Lerp(UnityEngine.Random.value);
         public float Lerp(float t) => Mathf.Lerp(min, max, t);
         public float Clamp(float value) => Mathf.Clamp(value, min, max);
         public bool Contains(float t)
@@ -342,48 +457,40 @@ namespace sxg
 
     ////////////////////////// SMOOTH ////////////////////////////////
     [System.Serializable]
-    public struct Smooth<T>
+    public struct Smoother<T>
     {
-        [ReadOnly] [SerializeField] private T target;
-        [ReadOnly] [SerializeField] private T value; // { get; private set; }
+        private T value;
         private T velocity;
-        public float time;
+        private float time;
 
+        public T Value { get => value; }
+        public float Time { get => time; set => time = value; }
 
-        public T Value => value;
-
-        public Smooth(T value, float time)
+        public Smoother(T value, float time)
         {
-            this.target = value;
             this.value = value;
             this.velocity = default(T);
             this.time = time;
         }
-        public void SetTarget(T target)
+
+        public void SetValueForced(T target)
         {
-            this.target = target;
-        }
-        public void SetTargetForced(T target)
-        {
-            this.target = target;
             value = target;
             velocity = default(T);
         }
-        public void SetTargetAndSmooth(T target)
-        {
-            this.target = target;
-            DoSmooth();
-        }
-        public void DoSmooth()
+
+        public T Update(T target)
         {
             var func = GenericHelper.Get<T>();
+            Debug.Assert(func != null);
             if (func != null)
             {
                 value = func.SmoothFunc(value, target, ref velocity, time);
             }
+            return value;
         }
 
-        public static implicit operator T(Smooth<T> x)
+        public static implicit operator T(Smoother<T> x)
         {
             return x.Value;
         }

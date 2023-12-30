@@ -29,7 +29,7 @@ namespace sxg
     }
 
 #if SNETCODE
-    public class NetworkManager<T> : NetworkBehaviour where T : NetworkBehaviour
+    public class NetworkedManager<T> : NetworkBehaviour where T : NetworkBehaviour
     {
         private static T instance;
         public static T Instance

@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine.Events;
+using System.IO;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -19,7 +20,7 @@ namespace sxg
     // Naming: Get / Find / Compute / 
     public static partial class Utility
     {
-
+        static float eps = 1e-4f;
         ////////////////////////// MATH ////////////////////////////////
         public static int          Mod                  (this int value, int mod)
         {
@@ -35,7 +36,7 @@ namespace sxg
         }
         public static float        Sign                 (this float value)
         {
-            return Mathf.Abs(value) < 0.0001f ? 0f : value > 0f ? 1f : -1f;
+            return value > eps ? 1f : value < -eps ? -1f : 0f;
         }
         public static int          SignNo0              (this int value)
         {
@@ -57,6 +58,10 @@ namespace sxg
         {
             return toMin + (toMax - toMin) * ((value - fromMin) / (fromMax - fromMin));
         }
+        public static float        Remap                (this float value, Range from, Range to)
+        {
+            return to.Min + (to.Max - to.Min) * ((value - from.Min) / (from.Max - from.Min));
+        }
         public static float        RemapClamp           (this float value, float fromMin, float fromMax, float toMin, float toMax)
         {
             return toMin + (toMax - toMin) * Mathf.Clamp01((value - fromMin) / (fromMax - fromMin));
@@ -67,7 +72,9 @@ namespace sxg
         }
         public static float        Truncate             (this float value, float max)
         {
-            return Mathf.Sign(value) * Mathf.Min(value, max);
+            if (Mathf.Abs(value) > max)
+                return Mathf.Sign(value) * max;
+            return value;
         }
         public static float        Truncate             (this float value, float min, float max)
         {
@@ -75,7 +82,7 @@ namespace sxg
         }
         public static bool         IsClose              (this float value, float value2)
         {
-            return Mathf.Abs(value-value2) < 0.0001f;
+            return Mathf.Abs(value-value2) <= eps;
         }
         public static float        SumProduct           (float[] a, float[] b)
         {
@@ -195,6 +202,10 @@ namespace sxg
         {
             return Mathf.CeilToInt(value / amount) * amount;
         }
+        public static float        RoundDecimals        (this float value, int decimals)
+        {
+            return System.MathF.Round(value, decimals);
+        }
 
         public static float        Clean                (float value, float amount, float eps)
         {
@@ -307,15 +318,26 @@ namespace sxg
         ////////////////////////// VECTOR2 ////////////////////////////////
         public static Vector2      Truncate             (this Vector2 vector, float max)
         {
-            return vector.normalized * Mathf.Min(vector.magnitude, max);
+            Debug.Assert(max >= 0f);
+            if (vector.sqrMagnitude > max * max)
+                return vector.normalized * max;
+            return vector;
         }
-        public static Vector2      Clamp                (this Vector2 vector, float min, float max)
+        public static Vector2      ClampMagnitude       (this Vector2 vector, float min, float max)
         {
             return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
         public static Vector2      ClampComponents      (this Vector2 vector, float min, float max)
         {
-            return new Vector2(Mathf.Clamp(vector.x, min, max), Mathf.Clamp(vector.y, min, max));
+            return new Vector2(
+                Mathf.Clamp(vector.x, min, max),
+                Mathf.Clamp(vector.y, min, max));
+        }
+        public static Vector2 ClampComponents(this Vector2 vector, Vector2 min, Vector2 max)
+        {
+            return new Vector2(
+                Mathf.Clamp(vector.x, min.x, max.x),
+                Mathf.Clamp(vector.y, min.y, max.y));
         }
         public static Vector2      Quantize             (this Vector2 vector, int angleQuantization, int magnitudeQuantization)
         {
@@ -349,7 +371,6 @@ namespace sxg
             vector.y = (sin * tx) + (cos * ty);
             return vector;
         }
-
         public static Vector2      Rotate90             (this Vector2 vector)
         {
             return new Vector2(-vector.y, vector.x);
@@ -386,10 +407,13 @@ namespace sxg
         {
             return (vector - other).sqrMagnitude <= dist * dist;
         }
+        public static bool         IsZero               (this Vector2 vector)
+        {
+            return vector.sqrMagnitude <= eps * eps;
+        }
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
-        private static float eps = 0.001f;
         public static Vector2      To2                  (this Vector3 vector)
         {
             return new Vector2(vector.x, vector.z);
@@ -402,18 +426,21 @@ namespace sxg
         {
             return Vector3.Cross(a, b).IsZero();
         }
-        public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
+        public static Vector3      GetTangent           (this Vector3 vector)
         {
             Vector3 normal = vector.normalized;
 
             // Choose another vector not parallel
-            tangent = (Mathf.Abs(normal.x) < 0.9f) ? xAxis : yAxis;
+            Vector3 tangent = (Mathf.Abs(normal.x) < 0.9f) ? xAxis : yAxis;
 
-            // Remove the part that is parallel to Z
+            // Remove the part that is parallel to vector
             tangent -= normal * Vector3.Dot(normal, tangent);
-            tangent.Normalize();
-
-            bitangent = Vector3.Cross(normal, tangent);
+            return tangent.normalized;
+        }
+        public static void         GetTangents          (this Vector3 vector, out Vector3 tangent, out Vector3 bitangent)
+        {
+            tangent = GetTangent(vector);
+            bitangent = Vector3.Cross(vector, tangent).normalized;
         }
         public static Vector3      Y                    (this Vector3 vector)
         {
@@ -449,7 +476,31 @@ namespace sxg
         }
         public static bool         IsUnit               (this Vector3 vector)
         {
-            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps * eps;
+            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps;
+        }
+        public static void         Deconstruct          (this Vector3 vector, out float x, out float y, out float z)
+        {
+            x = vector.x;
+            y = vector.y;
+            z = vector.z;
+        }
+        public static Vector3      ClampComponents      (this Vector3 vector, Vector3 min, Vector3 max)
+        {
+            return new(
+                Mathf.Clamp(vector.x, min.x, max.x),
+                Mathf.Clamp(vector.y, min.y, max.y),
+                Mathf.Clamp(vector.z, min.z, max.z));
+        }
+        public static Vector3      Truncate             (this Vector3 vector, float max)
+        {
+            Debug.Assert(max >= 0f);
+            if (vector.sqrMagnitude > max * max)
+                return vector.normalized * max;
+            return vector;
+        }
+        public static Vector3      Clamp                (this Vector3 vector, float min, float max)
+        {
+            return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
 
         public static Vector3      xAxis                => Vector3.right;
@@ -486,7 +537,34 @@ namespace sxg
         {
             return Quaternion.Inverse(q);
         }
-        public static Quaternion   SmoothDamp           (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
+        public static Vector3      GetImag              (this Quaternion q)
+        {
+            return new Vector3(q.x, q.y, q.z);
+        }
+        public static void         SetImag              (this Quaternion q, Vector3 vector)
+        {
+            q.x = vector.x;
+            q.y = vector.y;
+            q.z = vector.z;
+            q.w = 0f;
+        }
+        public static Quaternion   SmoothDamp           (Quaternion current, Quaternion target, ref Quaternion currentVelocity, float smoothTime)
+        {
+            Quaternion changeQuat = current * target.Inverse();
+            changeQuat.ToAngleAxis(out float angle, out Vector3 axis);
+            Vector3 change = axis * angle;
+            Vector3 imag = currentVelocity.GetImag();
+            Vector3 angularStep = Vector3.SmoothDamp(change, Vector3.zero, ref imag, smoothTime);
+            currentVelocity.SetImag(imag);
+            if (angularStep.IsZero())
+                return target;
+            angle = angularStep.magnitude;
+            axis = angularStep / angle;
+            Quaternion step = Quaternion.AngleAxis(angle, axis);
+            Quaternion output = step * target;
+            return output.normalized;
+        }
+        public static Quaternion   SmoothDampOld        (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
         {
             if (Time.deltaTime < Mathf.Epsilon) return rot;
             // account for double-cover
@@ -531,28 +609,85 @@ namespace sxg
         {
             return Quaternion.Euler(-angle, 90f, 0f);
         }
+        public static Vector3      ToAxisTimesAngle     (this Quaternion q)
+        {
+            q.ToAngleAxis(out float angle, out Vector3 axis);
+            return axis * angle;
+        }
+        public static Quaternion   QuaternionFromAxisTimesAngle(this Vector3 v)
+        {
+            if (v.IsZero())
+                return Quaternion.identity;
+            float angle = v.magnitude;
+            Vector3 axis = v / angle;
+            return Quaternion.AngleAxis(angle, axis);
+        }
 
 
         ////////////////////////// FUZZY MATH ////////////////////////////////
-        public static bool         FuzzyEq               (float a, float b)
+        public static bool         FuzzyEq               (this float a, float b)
         {
             //return Mathf.Approximately(a, b);
-            return Mathf.Abs(a - b) < 0.0001f;
+            return Mathf.Abs(a - b) <= eps;
         }
         public static bool         FuzzyEq               (this Vector2 v, Vector2 o)
         {
             return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y);
         }
-        public static bool FuzzyEq(this Vector3 v, Vector3 o)
+        public static bool         FuzzyEq               (this Vector3 v, Vector3 o)
         {
             return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y) && FuzzyEq(v.z, o.z);
         }
-        public static bool FuzzyEq(this Matrix4x4 m1, Matrix4x4 m2)
+        public static bool         FuzzyEq               (this Matrix4x4 m1, Matrix4x4 m2)
         {
             for (int i = 0; i < 16; ++i)
                 if (!FuzzyEq(m1[i], m2[i]))
                     return false;
             return true;
+        }
+
+        public static bool         FuzzyLt               (this float a, float b)
+        {
+            return a < b + eps;
+        }
+        public static bool         FuzzyGt               (this float a, float b)
+        {
+            return a > b - eps;
+        }
+        public static bool         FuzzyLe               (this float a, float b)
+        {
+            return a <= b + eps;
+        }
+        public static bool         FuzzyGe               (this float a, float b)
+        {
+            return a >= b - eps;
+        }
+        public static bool         FuzzyNe               (this float a, float b)
+        {
+            return Mathf.Abs(a - b) > eps;
+        }
+
+
+        ////////////////////////// LERP INTERPOLATION ////////////////////////////////
+        private static float       GlerpAlpha           (float time, float dt)
+        {
+            // original: 1-e^(-speed * dt)
+            // using time = 1/speed. The 5x is because it takes 5x the time to reach 99.3%
+            // speed = 5/time =>  time = 5/speed
+            return time == 0f ? 1f : 1f - Mathf.Exp(-5f / time * dt);
+        }
+        public static float        Glerp                (float a, float b, float time, float dt)
+            => Mathf.Lerp(a, b, GlerpAlpha(time, dt));
+        public static Vector2      Glerp                (Vector2 a, Vector2 b, float time, float dt)
+            => Vector2.Lerp(a, b, GlerpAlpha(time, dt));
+        public static Vector3      Glerp                (Vector3 a, Vector3 b, float time, float dt)
+            => Vector3.Lerp(a, b, GlerpAlpha(time, dt));
+        public static Quaternion   Glerp                (Quaternion a, Quaternion b, float time, float dt)
+            => Quaternion.Slerp(a, b, GlerpAlpha(time, dt));
+        public static Transf       Glerp                (Transf a, Transf b, float time, float dt)
+        {
+            float t = GlerpAlpha(time, dt);
+            return new(Vector3.Lerp(a.position, b.position, t), Quaternion.Slerp(a.rotation, b.rotation, t));
         }
 
 
@@ -632,7 +767,7 @@ namespace sxg
         }
         public static float        SampleNormal()
         {
-            //Avoid getting u == 0.0
+            //Avoid getting u == 0
             float u1 = 0f, u2 = 0f;
             while (u1 < Mathf.Epsilon || u2 < Mathf.Epsilon)
             {
@@ -683,6 +818,26 @@ namespace sxg
             Debug.Assert(var >= 0f && var <= 1f);
             return avg * UnityEngine.Random.Range(1f - var, 1f + var);
         }
+        public static int          GetRandom            (this MonoBehaviour mb, int number)
+        {
+            return System.HashCode.Combine(mb.GetHashCode(), number);
+        }
+        public static float        GetRandomValue       (this MonoBehaviour mb, int number)
+        {
+            return System.HashCode.Combine(mb.GetHashCode(), number);
+        }
+        public static uint hash(uint state)
+        {
+            // https://www.cs.ubc.ca/~rebridson/docs/schechter-sca08-turbulence.pdf
+            state ^= 2747636419u;
+            // 3 times the same
+            state *= 2654435769u;
+            state ^= state >> 16;
+            state *= 2654435769u;
+            state ^= state >> 16;
+            state *= 2654435769u;
+            return state;
+        }
 
 
         ////////////////////////// SEQUENCES / COLLECTIONS ////////////////////////////////
@@ -693,7 +848,8 @@ namespace sxg
         }
         public static T            SafeGet<T>           (this IEnumerable<T> enumerable, int index, T defaultT = default)
         {
-            if (enumerable == null || 0 > index || index >= enumerable.Count()) return defaultT;
+            if (enumerable == null || index < 0 || index >= enumerable.Count())
+                return defaultT;
             return enumerable.ElementAt(index);
         }
         public static T            Get<T>               (this IEnumerable<T> enumerable, int index, T defaultT = default)
@@ -999,6 +1155,10 @@ namespace sxg
         {
             return Enumerable.Empty<T>();
         }
+        public static T            GetMod<T>            (this IEnumerable<T> enumerable, int index)
+        {
+            return enumerable.ElementAt(index.Mod(enumerable.Count()));
+        }
 
 
         ////////////////////////// GEOMETRY ////////////////////////////////
@@ -1077,13 +1237,12 @@ namespace sxg
         {
             Vector2 d0 = (p1 - p0).normalized;
             Vector2 d1 = (p2 - p1).normalized;
-            const float tolerance = 1f - 0.01f;
             float dot = Vector2.Dot(d0, d1);
-            if (dot >= tolerance) // collinear
+            if (dot >= 1f - eps) // collinear
             {
                 return p1 + d0.Rotate90() * offset;
             }
-            else if (dot <= -tolerance) // opposite
+            else if (dot <= -1f + eps) // opposite
             {
                 return p1 - d0 * offset;
             }
@@ -1101,12 +1260,11 @@ namespace sxg
             // NOTES: d is coming TOWARDS the center, r is going AWAY from it (like raycasting)
             // thanks wolframalpha
             float dot = Vector2.Dot(d, r);
-            const float tolerance = 0.001f;
-            if (dot > 1f - tolerance) // collinear
+            if (dot > 1f - eps) // collinear
             {
                 return d.Rotate90();
             }
-            else if (dot < -1f + tolerance) // opposite
+            else if (dot < -1f + eps) // opposite
             {
                 return -d;
             }
@@ -1149,7 +1307,7 @@ namespace sxg
 
             float e = (b.x - a.x) * (d.y - c.y) - (b.y - a.y) * (d.x - c.x);
 
-            if (e == 0.0f)
+            if (e == 0f)
             {
                 return false;
             }
@@ -1157,7 +1315,7 @@ namespace sxg
             float u = ((c.x - a.x) * (d.y - c.y) - (c.y - a.y) * (d.x - c.x)) / e;
             float v = ((c.x - a.x) * (b.y - a.y) - (c.y - a.y) * (b.x - a.x)) / e;
 
-            if (u < 0.0f || u > 1.0f || v < 0.0f || v > 1.0f)
+            if (u < 0f || u > 1f || v < 0f || v > 1f)
             {
                 return false;
             }
@@ -1196,7 +1354,7 @@ namespace sxg
         public static float        FindSegmentDistanceToPointSquared  (Vector2 a, Vector2 b, Vector2 p)
         {
             float l2 = (a - b).sqrMagnitude;
-            if (Mathf.Abs(l2) < 0.0001f) return (p - a).sqrMagnitude;
+            if (Mathf.Abs(l2) < eps) return (p - a).sqrMagnitude;
             float t = Mathf.Clamp01(Vector2.Dot(p - a, b - a) / l2);
             Vector2 projection = a + t * (b - a);
             return (p - projection).sqrMagnitude;
@@ -1278,7 +1436,8 @@ namespace sxg
         {
             Vector3 forward = transform.forward;
             forward.y = 0f;
-            if (forward.sqrMagnitude < 0.0001f) return 0f;
+            if (forward.sqrMagnitude < eps)
+                return 0f;
             float heading = Vector3.SignedAngle(Vector3.forward, forward, Vector3.up);
             return heading;
         }
@@ -1395,6 +1554,15 @@ namespace sxg
             }
             return child;
         }
+        public static void         ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
+        {
+            transform.ForeachDescendant(t =>
+            {
+                T comp = t.GetComponent<T>();
+                if (comp != null)
+                    action(comp);
+            }, includeSelf);
+        }
         public static void         ForeachDescendant    (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
             // BFS
@@ -1416,7 +1584,7 @@ namespace sxg
                 }
             }
         }
-        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action)
+        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action, bool includeSelf = true)
         {
             // DFS
             if (transform == null || action == null) return;
@@ -1434,6 +1602,12 @@ namespace sxg
                     stack.Push(child);
                 }
             }
+        }
+        public static int          DescendantCount      (this Transform transform)
+        {
+            int ans = 0;
+            transform.ForeachDescendant(t => ++ans);
+            return ans;
         }
         public static void         ForeachChild         (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
@@ -1610,6 +1784,14 @@ namespace sxg
         {
             return new(transform.localPosition, transform.localRotation);
         }
+        public static Transf       Inverse              (this Transform transform)
+        {
+            return new Transf(transform).inverse;
+        }
+        public static void         PreRotate            (this Transform transform, Quaternion rot)
+        {
+            transform.rotation = rot * transform.rotation;
+        }
 
 
         ////////////////////////// RECTTRANSFORM ////////////////////////////////
@@ -1641,14 +1823,14 @@ namespace sxg
         }
         public static void         SetVelocity          (this Rigidbody rb, Vector3 velocity)
         {
-            rb.velocity = Vector3.zero;
-            rb.AddForce(velocity, ForceMode.VelocityChange);
+            rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody rb, Vector3 acceleration)
         {
             rb.AddForce(acceleration, ForceMode.Acceleration);
         }
-        public static void         AddAccelerationMaxVelocity(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
+
+        public static void         AddAccelerationMaxVelocity_DEPRECATED(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
         {
             float speedDelta = maxVelocity - rb.velocity.magnitude;
             if (speedDelta > 0f)
@@ -1661,9 +1843,9 @@ namespace sxg
                 rb.AddForce(acceleration, ForceMode.Acceleration);
             }
         }
-        public static void         Brake                (this Rigidbody rb, float breakAcc)
+        public static void         Brake_DEPRECATED     (this Rigidbody rb, float breakAcc)
         {
-            if (rb.velocity.magnitude > 0.0001f)
+            if (rb.velocity.magnitude > eps)
             {
                 float maxAccNeeded = rb.velocity.magnitude / Time.fixedDeltaTime;
                 //acceleration += -velocity.normalized * maxAcceleration;//Mathf.Min(maxAccNeeded, breakAcc);
@@ -1673,91 +1855,91 @@ namespace sxg
         }
         public static void         AddRelativeForceAtPosition(this Rigidbody rb, Vector3 force, Vector3 position, ForceMode mode)
         {
-            Vector3 forceW = rb.transform.TransformVector(force);
-            Vector3 posW = rb.transform.TransformPoint(position);
-            rb.AddForceAtPosition(forceW, posW, mode);
+            Vector3 forceWorld = rb.transform.TransformVector(force);
+            Vector3 posWorld   = rb.transform.TransformPoint(position);
+            rb.AddForceAtPosition(forceWorld, posWorld, mode);
+        }
+
+        public static Vector3      ConvertToForce       (Vector3 value, ForceMode mode, float mass, float dt)
+        {
+            switch (mode)
+            {
+            case ForceMode.Force: // N=kg*m/s^2 -> rb.velocity += value * dt / mass
+                return value;
+            case ForceMode.Acceleration: // m/s^2 -> rb.velocity += value * dt
+                return value * mass;
+            case ForceMode.Impulse: // momentum=kg*m/s -> rb.velocity += value / mass
+                return value / dt;
+            case ForceMode.VelocityChange: // m/s -> rb.velocity += value
+                return value * mass / dt;
+            }
+            Debug.Assert(false);
+            return Vector3.zero;
+        }
+        public static float        ConvertToForce       (float value, ForceMode mode, float mass, float dt)
+            => ConvertToForce(new Vector3(value, 0f, 0f), mode, mass, dt).x;
+
+
+        // from https://discussions.unity.com/t/force-to-velocity-scaling/120739/3
+        public static float GetFinalVelocity(float aVelocityChange, float aDrag)
+        {
+            return aVelocityChange * (1 / Mathf.Clamp01(aDrag * Time.fixedDeltaTime) - 1);
+        }
+        public static float GetFinalVelocityFromAcceleration(float aAcceleration, float aDrag)
+        {
+            return GetFinalVelocity(aAcceleration * Time.fixedDeltaTime, aDrag);
+        }
+        public static float GetDrag(float aVelocityChange, float aFinalVelocity)
+        {
+            return aVelocityChange / ((aFinalVelocity + aVelocityChange) * Time.fixedDeltaTime);
+        }
+        public static float GetDragFromAcceleration(float aAcceleration, float aFinalVelocity)
+        {
+            return GetDrag(aAcceleration * Time.fixedDeltaTime, aFinalVelocity);
         }
 
         ////////////////////////// RIGIDBODY 2D ////////////////////////////////
-
         public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddForce(force);
-                break;
-            case ForceMode.Impulse:
-                rb.AddForce(force / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddForce(force * rb.mass);
-                break;
-            case ForceMode.VelocityChange:
-                rb.AddForce(force * rb.mass / Time.fixedDeltaTime);
-                break;
-            }
+            rb.AddForce(ConvertToForce(force, mode, rb.mass, Time.fixedDeltaTime));
         }
         public static void         AddRelativeForce     (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddRelativeForce(force);
-                break;
-            case ForceMode.Impulse:
-                rb.AddRelativeForce(force / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddRelativeForce(force * rb.mass);
-                break;
-            case ForceMode.VelocityChange:
-                rb.AddRelativeForce(force * rb.mass / Time.fixedDeltaTime);
-                break;
-            }
+            rb.AddRelativeForce(ConvertToForce(force, mode, rb.mass, Time.fixedDeltaTime));
         }
         public static void         AddTorque            (this Rigidbody2D rb, float torque, ForceMode mode = ForceMode.Force)
         {
-            switch (mode)
-            {
-            case ForceMode.Force:
-                rb.AddTorque(torque);
-                break;
-            case ForceMode.Impulse:
-                rb.AddTorque(torque / Time.fixedDeltaTime);
-                break;
-            case ForceMode.Acceleration:
-                rb.AddTorque(torque * rb.inertia);
-                break;
-            case ForceMode.VelocityChange:
-                //rb.AddTorque(torque * rb.inertia / Time.fixedDeltaTime);
-                rb.angularVelocity += torque;
-                break;
-            }
+            rb.AddTorque(ConvertToForce(torque, mode, rb.inertia, Time.fixedDeltaTime));
         }
         public static void         AddVelocity          (this Rigidbody2D rb, Vector2 velocity)
         {
-            rb.velocity += velocity;
+            rb.AddForce(velocity, ForceMode.VelocityChange);
         }
         public static void         SetVelocity          (this Rigidbody2D rb, Vector2 velocity)
         {
-            rb.velocity = velocity;
+            rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
         }
         public static void         AddAcceleration      (this Rigidbody2D rb, Vector2 acceleration)
         {
-            rb.AddForce(acceleration * rb.mass);
+            rb.AddForce(acceleration, ForceMode.Acceleration);
         }
         public static void         AddRelativeAcceleration(this Rigidbody2D rb, Vector2 acceleration)
         {
-            rb.AddRelativeForce(acceleration * rb.mass);
+            rb.AddRelativeForce(acceleration, ForceMode.Acceleration);
         }
-        public static void         AddTorqueToReachRotation(this Rigidbody2D rb, float targetRotation, float maxTorque)
+        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
+        {
+            rb.velocity = other.velocity;
+            rb.angularVelocity = other.angularVelocity;
+        }
+
+        public static void         AddTorqueToReachRotation_DEPRECATED(this Rigidbody2D rb, float targetRotation, float maxTorque)
         {
             float deltaAngle = Mathf.DeltaAngle(rb.rotation, targetRotation); // todo: ensure in [-180, 180
             float torque = Math.Clamp(deltaAngle, -maxTorque, maxTorque);
             rb.AddTorque(torque, ForceMode2D.Force);
         }
-        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime(float velocityMax, float timeToVelocityMax)
+        public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime_DEPRECATED(float velocityMax, float timeToVelocityMax)
         {
             float v = velocityMax;
             float T = timeToVelocityMax;
@@ -1767,11 +1949,6 @@ namespace sxg
             float d = (1f - Mathf.Exp(Mathf.Log(1f - p) * t / T)) / t;
             float a = v * d;
             return (a, d);
-        }
-        public static void         CopyVelocities       (this Rigidbody2D rb, Rigidbody2D other)
-        {
-            rb.velocity = other.velocity;
-            rb.angularVelocity = other.angularVelocity;
         }
 
 
@@ -1895,6 +2072,41 @@ namespace sxg
                 }
             }
             return ans;
+        }
+        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = ',') where T : struct
+        {
+            List<T> ans = new();
+            StringReader reader = new(csvData);
+            int numStructFields = typeof(T).GetFields().Length;
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.IsNullOrEmpty() || line[0] == '#')
+                    continue;
+
+                string[] fields = line.Split(separator);
+                if (fields.Length != numStructFields)
+                {
+                    Debug.Log($"Skipping line: {line} - Field count mismatch");
+                    continue;
+                }
+
+                T parsedStruct = ParseStruct<T>(fields);
+                ans.Add(parsedStruct);
+            }
+            return ans;
+        }
+        private static T           ParseStruct<T>       (string[] fields) where T : struct
+        {
+            T result = default;
+            int index = 0;
+            foreach (var fieldInfo in typeof(T).GetFields())
+            {
+                object parsedValue = Convert.ChangeType(fields[index], fieldInfo.FieldType);
+                fieldInfo.SetValueDirect(__makeref(result), parsedValue);
+                index++;
+            }
+            return result;
         }
 
         public static string       IntToAlphaNumeric    (int number, int N)
@@ -2112,6 +2324,45 @@ namespace sxg
             System.IO.File.WriteAllBytes(fullpath, _bytes);
             Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
         }
+        public static void ExportMeshAsObj(this Mesh mesh, string fullpath)
+        {
+            using (StreamWriter sw = new StreamWriter(fullpath))
+            {
+                sw.WriteLine($"# Exported Mesh {mesh.name} at {GetTimestampNow()}");
+                if (mesh.colors.IsNullOrEmpty())
+                {
+                    foreach (Vector3 vertex in mesh.vertices)
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z);
+                }
+                else
+                {
+                    for (int i = 0; i < mesh.vertexCount; ++i)
+                    {
+                        Vector3 vertex = mesh.vertices[i];
+                        Color color = mesh.colors[i];
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
+                    }
+                }
+
+                foreach (Vector3 normal in mesh.normals)
+                    sw.WriteLine("vn " + normal.x + " " + normal.y + " " + normal.z);
+
+                foreach (Vector2 uv in mesh.uv)
+                    sw.WriteLine("vt " + uv.x + " " + uv.y);
+
+                for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+                {
+                    int[] triangles = mesh.GetTriangles(submesh);
+                    for (int i = 0; i < triangles.Length; i += 3)
+                    {
+                        // OBJ indices start from 1, so add 1 to each index
+                        sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
+                            triangles[i] + 1, triangles[i + 1] + 1, triangles[i + 2] + 1));
+                    }
+                }
+                Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
+            }
+        }
         public static void         SetAlpha             (this Image image, float alpha)
         {
             if (image == null) return;
@@ -2213,13 +2464,14 @@ namespace sxg
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
+        private static string F(float value) => $"{value:0.00000}f";
         public static string       Prettify(this Vector3 v)
         {
-            return $"Vector3({v.x:0.00000}f, {v.y:0.00000}f, {v.z:0.00000}f)";
+            return $"Vector3({F(v.x)}, {F(v.y)}, {F(v.z)})";
         }
         public static string       Prettify(this Quaternion q)
         {
-            return $"Quat({q.x:0.00000}f, {q.y:0.00000}f, {q.z:0.00000}f, {q.w:0.00000}f)";
+            return $"Quat({F(q.x)}, {F(q.y)}, {F(q.z)}, {F(q.w)})";
         }
         public static void SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
         {
