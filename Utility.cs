@@ -622,21 +622,6 @@ namespace sxg
             Vector3 axis = v / angle;
             return Quaternion.AngleAxis(angle, axis);
         }
-        public static Quaternion   SmoothDamp           (Quaternion current, Quaternion target, ref Quaternion currentVelocity, float smoothTime)//, float maxSpeed = -1f, float deltaTime = -1f)
-        {
-            Quaternion changeQuat = current * target.Inverse();
-            changeQuat.ToAngleAxis(out float angle, out Vector3 axis);
-            Vector3 change = angle * axis;
-            Vector3 imag = new(currentVelocity.x, currentVelocity.y, currentVelocity.z);
-            Vector3 angularStep = Vector3.SmoothDamp(change, Vector3.zero, ref imag, smoothTime);//, maxSpeed, deltaTime);
-            currentVelocity = new Quaternion(imag.x, imag.y, imag.z, 0f);
-
-            angle = angularStep.magnitude;
-            Quaternion step = angle <= eps  ? Quaternion.identity : Quaternion.AngleAxis(angle, angularStep / angle);
-            Quaternion output = step * target;
-            output.Normalize();
-            return output;
-        }
 
 
         ////////////////////////// FUZZY MATH ////////////////////////////////
