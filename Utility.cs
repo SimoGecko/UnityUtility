@@ -605,6 +605,24 @@ namespace sxg
             Debug.LogError("wheel of fortune didn't finish");
             return -1;
         }
+        public static int WheelOfFortune2(float[] a, float randValue)
+        {
+            Debug.Assert(!a.IsNullOrEmpty() && a.All(x => x >= 0f));
+            Debug.Assert(randValue >= 0f && randValue <= 1f);
+            float sum = a.Sum();
+            if (sum == 0f)
+                return Mathf.Min(Mathf.FloorToInt(randValue * a.Length), a.Length-1);
+            float r = randValue * sum;
+            for (int i = 0; i < a.Length; i++)
+            {
+                if (r <= a[i])
+                    return i;
+                r -= a[i];
+            }
+            Debug.Assert(false);
+            return Mathf.Min(Mathf.FloorToInt(randValue * sum), a.Length - 1);
+        }
+
         public static float        Normal               ()
         {
             // PURPOSE: Normal distribution with avg=0 and std=1
