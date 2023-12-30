@@ -665,6 +665,26 @@ namespace sxg
             Debug.Assert(var >= 0f && var <= 1f);
             return avg * UnityEngine.Random.Range(1f - var, 1f + var);
         }
+        public static int          GetRandom            (this MonoBehaviour mb, int number)
+        {
+            return System.HashCode.Combine(mb.GetHashCode(), number);
+        }
+        public static float        GetRandomValue       (this MonoBehaviour mb, int number)
+        {
+            return System.HashCode.Combine(mb.GetHashCode(), number);
+        }
+        public static uint hash(uint state)
+        {
+            // https://www.cs.ubc.ca/~rebridson/docs/schechter-sca08-turbulence.pdf
+            state ^= 2747636419u;
+            // 3 times the same
+            state *= 2654435769u;
+            state ^= state >> 16;
+            state *= 2654435769u;
+            state ^= state >> 16;
+            state *= 2654435769u;
+            return state;
+        }
 
 
         ////////////////////////// SEQUENCES / COLLECTIONS ////////////////////////////////
