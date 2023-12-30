@@ -41,6 +41,8 @@ namespace sxg.hl
         private static CustomHighlighterSo GetOrCreateSo()
         {
             const string path = "Assets/Editor/CustomHighlighterData.asset";
+            if (!AssetDatabase.IsValidFolder("Assets/Editor"))
+                AssetDatabase.CreateFolder("Assets", "Editor");
             var so = AssetDatabase.LoadAssetAtPath<CustomHighlighterSo>(path);
             if (so == null)
             {
