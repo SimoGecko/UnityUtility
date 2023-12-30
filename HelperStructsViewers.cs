@@ -122,6 +122,36 @@ namespace sxg
             EditorGUI.EndProperty();
         }
     }
+
+    /*
+    [CustomPropertyDrawer(typeof(Transf))]
+    public class TransfDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
+        {
+            var pos = property.FindPropertyRelative("position");
+            var rot = property.FindPropertyRelative("rotation");
+
+            EditorGUI.BeginProperty(rect, label, property);
+            {
+                Rect rectTop = new Rect(rect.position, rect.size * new Vector2(1f, 0.5f));
+                Rect rectBottom = new Rect(rect.position + Vector2.up * 20f, rect.size * new Vector2(1f, 0.5f));
+
+                EditorGUIUtility.labelWidth = 30;
+                EditorGUI.LabelField(rectTop.Part(0f, 0.43f), label);
+                pos.vector3Value = EditorGUI.Vector3Field(rectTop.Part(0.43f, 1f), "pos", pos.vector3Value);
+                Vector3 rotEuler = rot.quaternionValue.eulerAngles;
+                rotEuler = EditorGUI.Vector3Field(rectBottom.Part(0.43f, 1f), "rot", rotEuler);
+                rot.quaternionValue = Quaternion.Euler(rotEuler);
+            }
+            EditorGUI.EndProperty();
+        }
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return base.GetPropertyHeight(property, label)*2.5f;
+        }
+    }
+    */
 #endif
 
 }

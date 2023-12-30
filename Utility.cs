@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine.Events;
+using System.IO;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -199,6 +200,10 @@ namespace sxg
         {
             return Mathf.CeilToInt(value / amount) * amount;
         }
+        public static float        RoundDecimals        (this float value, int decimals)
+        {
+            return System.MathF.Round(value, decimals);
+        }
 
         public static float        Clean                (float value, float amount, float eps)
         {
@@ -313,13 +318,21 @@ namespace sxg
         {
             return vector.normalized * Mathf.Min(vector.magnitude, max);
         }
-        public static Vector2      Clamp                (this Vector2 vector, float min, float max)
+        public static Vector2      ClampMagnitude       (this Vector2 vector, float min, float max)
         {
             return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
         public static Vector2      ClampComponents      (this Vector2 vector, float min, float max)
         {
-            return new Vector2(Mathf.Clamp(vector.x, min, max), Mathf.Clamp(vector.y, min, max));
+            return new Vector2(
+                Mathf.Clamp(vector.x, min, max),
+                Mathf.Clamp(vector.y, min, max));
+        }
+        public static Vector2 ClampComponents(this Vector2 vector, Vector2 min, Vector2 max)
+        {
+            return new Vector2(
+                Mathf.Clamp(vector.x, min.x, max.x),
+                Mathf.Clamp(vector.y, min.y, max.y));
         }
         public static Vector2      Quantize             (this Vector2 vector, int angleQuantization, int magnitudeQuantization)
         {
@@ -465,6 +478,13 @@ namespace sxg
             y = vector.y;
             z = vector.z;
         }
+        public static Vector3      ClampComponents      (this Vector3 vector, Vector3 min, Vector3 max)
+        {
+            return new(
+                Mathf.Clamp(vector.x, min.x, max.x),
+                Mathf.Clamp(vector.y, min.y, max.y),
+                Mathf.Clamp(vector.z, min.z, max.z));
+        }
 
         public static Vector3      xAxis                => Vector3.right;
         public static Vector3      yAxis                => Vector3.up;
@@ -500,7 +520,34 @@ namespace sxg
         {
             return Quaternion.Inverse(q);
         }
-        public static Quaternion   SmoothDamp           (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
+        public static Vector3      GetImag              (this Quaternion q)
+        {
+            return new Vector3(q.x, q.y, q.z);
+        }
+        public static void         SetImag              (this Quaternion q, Vector3 vector)
+        {
+            q.x = vector.x;
+            q.y = vector.y;
+            q.z = vector.z;
+            q.w = 0f;
+        }
+        public static Quaternion   SmoothDamp           (Quaternion current, Quaternion target, ref Quaternion currentVelocity, float smoothTime)
+        {
+            Quaternion changeQuat = current * target.Inverse();
+            changeQuat.ToAngleAxis(out float angle, out Vector3 axis);
+            Vector3 change = axis * angle;
+            Vector3 imag = currentVelocity.GetImag();
+            Vector3 angularStep = Vector3.SmoothDamp(change, Vector3.zero, ref imag, smoothTime);
+            currentVelocity.SetImag(imag);
+            if (angularStep.IsZero())
+                return target;
+            angle = angularStep.magnitude;
+            axis = angularStep / angle;
+            Quaternion step = Quaternion.AngleAxis(angle, axis);
+            Quaternion output = step * target;
+            return output.normalized;
+        }
+        public static Quaternion   SmoothDampOld        (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
         {
             if (Time.deltaTime < Mathf.Epsilon) return rot;
             // account for double-cover
@@ -545,7 +592,7 @@ namespace sxg
         {
             return Quaternion.Euler(-angle, 90f, 0f);
         }
-        public static Vector3      ToAxisTimesAngle         (this Quaternion q)
+        public static Vector3      ToAxisTimesAngle     (this Quaternion q)
         {
             q.ToAngleAxis(out float angle, out Vector3 axis);
             return axis * angle;
@@ -1426,7 +1473,7 @@ namespace sxg
                 }
             }
         }
-        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action)
+        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action, bool includeSelf = true)
         {
             // DFS
             if (transform == null || action == null) return;
@@ -1444,6 +1491,12 @@ namespace sxg
                     stack.Push(child);
                 }
             }
+        }
+        public static int          DescendantCount      (this Transform transform)
+        {
+            int ans = 0;
+            transform.ForeachDescendant(t => ++ans);
+            return ans;
         }
         public static void         ForeachChild         (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
@@ -1913,6 +1966,41 @@ namespace sxg
                 }
             }
             return ans;
+        }
+        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = ',') where T : struct
+        {
+            List<T> ans = new();
+            StringReader reader = new(csvData);
+            int numStructFields = typeof(T).GetFields().Length;
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                if (line.IsNullOrEmpty() || line[0] == '#')
+                    continue;
+
+                string[] fields = line.Split(separator);
+                if (fields.Length != numStructFields)
+                {
+                    Debug.Log($"Skipping line: {line} - Field count mismatch");
+                    continue;
+                }
+
+                T parsedStruct = ParseStruct<T>(fields);
+                ans.Add(parsedStruct);
+            }
+            return ans;
+        }
+        private static T           ParseStruct<T>       (string[] fields) where T : struct
+        {
+            T result = default;
+            int index = 0;
+            foreach (var fieldInfo in typeof(T).GetFields())
+            {
+                object parsedValue = Convert.ChangeType(fields[index], fieldInfo.FieldType);
+                fieldInfo.SetValueDirect(__makeref(result), parsedValue);
+                index++;
+            }
+            return result;
         }
 
         public static string       IntToAlphaNumeric    (int number, int N)
