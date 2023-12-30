@@ -291,7 +291,7 @@ namespace sxg
                 Handles.DrawWireDisc(Vector3.up * pointOffset, Vector3.up, radius);
                 Handles.DrawWireDisc(Vector3.down * pointOffset, Vector3.up, radius);
             }
-        }
 #endif
+        }
     }
 }

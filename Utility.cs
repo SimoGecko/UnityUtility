@@ -11,6 +11,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine.Events;
+using System.IO;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -1395,6 +1396,15 @@ namespace sxg
             }
             return child;
         }
+        public static void         ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
+        {
+            transform.ForeachDescendant(t =>
+            {
+                T comp = t.GetComponent<T>();
+                if (comp != null)
+                    action(comp);
+            }, includeSelf);
+        }
         public static void         ForeachDescendant    (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
             // BFS
@@ -2096,6 +2106,45 @@ namespace sxg
             if (!fullpath.EndsWith(".png")) fullpath += ".png";
             System.IO.File.WriteAllBytes(fullpath, _bytes);
             Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
+        }
+        public static void ExportMeshAsObj(this Mesh mesh, string fullpath)
+        {
+            using (StreamWriter sw = new StreamWriter(fullpath))
+            {
+                sw.WriteLine($"# Exported Mesh {mesh.name} at {GetTimestampNow()}");
+                if (mesh.colors.IsNullOrEmpty())
+                {
+                    foreach (Vector3 vertex in mesh.vertices)
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z);
+                }
+                else
+                {
+                    for (int i = 0; i < mesh.vertexCount; ++i)
+                    {
+                        Vector3 vertex = mesh.vertices[i];
+                        Color color = mesh.colors[i];
+                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
+                    }
+                }
+
+                foreach (Vector3 normal in mesh.normals)
+                    sw.WriteLine("vn " + normal.x + " " + normal.y + " " + normal.z);
+
+                foreach (Vector2 uv in mesh.uv)
+                    sw.WriteLine("vt " + uv.x + " " + uv.y);
+
+                for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+                {
+                    int[] triangles = mesh.GetTriangles(submesh);
+                    for (int i = 0; i < triangles.Length; i += 3)
+                    {
+                        // OBJ indices start from 1, so add 1 to each index
+                        sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
+                            triangles[i] + 1, triangles[i + 1] + 1, triangles[i + 2] + 1));
+                    }
+                }
+                Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
+            }
         }
         public static void         SetAlpha             (this Image image, float alpha)
         {
