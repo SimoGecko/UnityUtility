@@ -2317,22 +2317,24 @@ namespace sxg
             }
             return result;
         }
-        public static void         SaveTextureAsPNG     (this Texture2D texture, string fullpath)
+        public static void         SaveTextureAsPNG     (this Texture2D texture, string fullpath, bool log = true)
         {
             byte[] _bytes = texture.EncodeToPNG();
             if (!fullpath.EndsWith(".png")) fullpath += ".png";
             System.IO.File.WriteAllBytes(fullpath, _bytes);
-            Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
+            if (log)
+                Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
         }
-        public static void ExportMeshAsObj(this Mesh mesh, string fullpath)
+        public static void ExportMeshAsObj(this Mesh mesh, string fullpath, bool log = true)
         {
+            // NOTICE the x coordinate is flipped because OBJ is right-handed and Unity Left-handed
             using (StreamWriter sw = new StreamWriter(fullpath))
             {
                 sw.WriteLine($"# Exported Mesh {mesh.name} at {GetTimestampNow()}");
                 if (mesh.colors.IsNullOrEmpty())
                 {
                     foreach (Vector3 vertex in mesh.vertices)
-                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z);
+                        sw.WriteLine("v " + -vertex.x + " " + vertex.y + " " + vertex.z);
                 }
                 else
                 {
@@ -2340,12 +2342,12 @@ namespace sxg
                     {
                         Vector3 vertex = mesh.vertices[i];
                         Color color = mesh.colors[i];
-                        sw.WriteLine("v " + vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
+                        sw.WriteLine("v " + -vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
                     }
                 }
 
                 foreach (Vector3 normal in mesh.normals)
-                    sw.WriteLine("vn " + normal.x + " " + normal.y + " " + normal.z);
+                    sw.WriteLine("vn " + -normal.x + " " + normal.y + " " + normal.z);
 
                 foreach (Vector2 uv in mesh.uv)
                     sw.WriteLine("vt " + uv.x + " " + uv.y);
@@ -2357,10 +2359,11 @@ namespace sxg
                     {
                         // OBJ indices start from 1, so add 1 to each index
                         sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
-                            triangles[i] + 1, triangles[i + 1] + 1, triangles[i + 2] + 1));
+                            triangles[i] + 1, triangles[i + 2] + 1, triangles[i + 1] + 1));
                     }
                 }
-                Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
+                if (log)
+                    Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
             }
         }
         public static void         SetAlpha             (this Image image, float alpha)
@@ -2520,6 +2523,11 @@ namespace sxg
             mesh.OptimizeReorderVertexBuffer();
 
             return mesh;
+        }
+        public static void         Translate            (this Mesh mesh, Vector3 offset)
+        {
+            mesh.SetVertices(mesh.vertices.Select(v => v += offset).ToArray());
+            mesh.RecalculateBounds();
         }
 
 
