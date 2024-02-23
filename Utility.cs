@@ -2144,6 +2144,18 @@ namespace sxg
             tokens = null;
             return false;
         }
+        public static string       TrimStart            (this string str, string prefix)
+        {
+            if (str.StartsWith(prefix))
+                return str.Substring(prefix.Length);
+            return str;
+        }
+        public static string       TrimEnd              (this string str, string suffix)
+        {
+            if (str.EndsWith(suffix))
+                return str.Substring(0, str.Length - suffix.Length);
+            return str;
+        }
 
 
         ////////////////////////// ROUTINE / INVOKE ////////////////////////////////
