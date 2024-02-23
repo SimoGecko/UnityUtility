@@ -24,12 +24,12 @@ namespace sxg
         {
             Gizmos.color = color;
             Quaternion rot = Quaternion.Euler(boneEuler);
-            transform.ForeachDescendant(t =>
+            foreach (var t in transform.GetDescendants(includeSelf: true))
             {
                 float length = t.childCount >= 1 ? Vector3.Distance(t.position, t.GetChild(0).position) : defaultBoneLength;
                 float width = length * boneWidth;
                 Gizmos2.DrawPyramid(t.position, t.rotation * rot, length, width);
-            }, true);
+            }
         }
 
     }

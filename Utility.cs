@@ -1093,6 +1093,24 @@ namespace sxg
                 list.Insert(index, item);
             }
         }
+        public static IEnumerable<(T,U)> Zip<T, U>      (this IEnumerable<T> list1, IEnumerable<U> list2)
+        {
+            if (list1 != null && list2 != null)
+            {
+                using (var enumerator1 = list1.GetEnumerator())
+                using (var enumerator2 = list2.GetEnumerator())
+                {
+                    while (enumerator1.MoveNext() && enumerator2.MoveNext())
+                    {
+
+                        yield return (
+                            enumerator1.Current,
+                            enumerator2.Current);
+                    }
+                }
+            }
+        }
+        // TODO: Deprecate the following two methods
         public static void         ForeachPair<T>       (this List<T> list, System.Action<T, T> action)
         {
             if (list == null || action == null)
@@ -1539,25 +1557,80 @@ namespace sxg
                 }
             }
         }
+
+        public static IEnumerable<Transform> GetChildren(this Transform transform, bool includeSelf = false)
+        {
+            if (includeSelf)
+                yield return transform;
+            for (int i = 0; i < transform.childCount; ++i)
+            {
+                yield return transform.GetChild(i);
+            }
+        }
+        public static IEnumerable<T> GetChildrenOfType<T>(this Transform transform, bool includeSelf = false)
+        {
+            return transform.GetChildren(includeSelf).Select(t => t.GetComponent<T>()).Where(c => c != null);
+        }
+        public static IEnumerable<Transform> GetDescendants(this Transform transform, bool includeSelf = false, bool useDfsOrder = false)
+        {
+            // By default we run BFS. DFS is also available
+            if (includeSelf)
+                yield return transform;
+
+            if (!useDfsOrder)
+            {
+                // BFS
+                Queue<Transform> queue = new();
+                queue.Enqueue(transform);
+
+                while (queue.Count > 0)
+                {
+                    Transform t = queue.Dequeue();
+                    // already returned
+                    for (int i = 0; i < t.childCount; i++)
+                    {
+                        Transform child = t.GetChild(i);
+                        yield return child;
+                        if (child.childCount > 0)
+                            queue.Enqueue(child);
+                    }
+                }
+            }
+            else
+            {
+                // DFS
+                Stack<Transform> stack = new();
+                if (includeSelf)
+                {
+                    stack.Push(transform);
+                }
+                else
+                {
+                    for (int i = transform.childCount - 1; i >= 0; --i)
+                        stack.Push(transform.GetChild(i));
+                }
+
+                while (stack.Count > 0)
+                {
+                    Transform t = stack.Pop();
+                    yield return t;
+                    for (int i = t.childCount - 1; i >= 0; --i)
+                    {
+                        Transform child = t.GetChild(i);
+                        stack.Push(child);
+                    }
+                }
+            }
+        }
+        public static IEnumerable<T> GetDescendantsOfType<T>(this Transform transform, bool includeSelf = false, bool useDfsOrder = false)
+        {
+            return transform.GetDescendants(includeSelf, useDfsOrder).Select(t => t.GetComponent<T>()).Where(c => c != null);
+        }
         public static Transform    FindDescendant       (this Transform transform, string name)
         {
             // NOTES: Transform.Find only looks in the children, not in the descendants
-            if (transform.gameObject.name == name) return transform;
-
-            Queue<Transform> queue = new();
-            queue.Enqueue(transform);
-
-            while (queue.Count > 0)
-            {
-                Transform t = queue.Dequeue();
-                for (int i = 0; i < t.childCount; i++)
-                {
-                    Transform c = t.GetChild(i);
-                    if (c.gameObject.name == name) return c;
-                    if (c.childCount > 0) queue.Enqueue(c);
-                }
-            }
-            return null;
+            // NOTES: this is a behavior change, previously we were also looking is self
+            return transform.GetDescendants(false).Where(t => t.name == name).FirstOrDefault();
         }
         public static Transform    FindChildOrCreate    (this Transform transform, string name)
         {
@@ -1570,72 +1643,44 @@ namespace sxg
             }
             return child;
         }
-        public static void         ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
-        {
-            transform.ForeachDescendant(t =>
-            {
-                T comp = t.GetComponent<T>();
-                if (comp != null)
-                    action(comp);
-            }, includeSelf);
-        }
-        public static void         ForeachDescendant    (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
-        {
-            // BFS
-            if (transform == null || action == null) return;
-            if (includeSelf) action(transform);
-
-            Queue<Transform> queue = new();
-            queue.Enqueue(transform);
-
-            while (queue.Count > 0)
-            {
-                Transform t = queue.Dequeue();
-                // already called action on it
-                for (int i = 0; i < t.childCount; i++)
-                {
-                    Transform child = t.GetChild(i);
-                    action(child);
-                    if (child.childCount > 0) queue.Enqueue(child);
-                }
-            }
-        }
-        public static void         ForeachDescendantDFS (this Transform transform, System.Action<Transform> action, bool includeSelf = true)
-        {
-            // DFS
-            if (transform == null || action == null) return;
-
-            Stack<Transform> stack = new();
-            stack.Push(transform);
-
-            while (stack.Count > 0)
-            {
-                Transform t = stack.Pop();
-                action(t);
-                for (int i = t.childCount - 1; i >= 0; --i)
-                {
-                    Transform child = t.GetChild(i);
-                    stack.Push(child);
-                }
-            }
-        }
         public static int          DescendantCount      (this Transform transform)
         {
-            int ans = 0;
-            transform.ForeachDescendant(t => ++ans);
-            return ans;
+            return transform.GetDescendants().Count();
         }
-        public static void         ForeachChild         (this Transform transform, System.Action<Transform> action, bool includeSelf = false)
+        // NOTES: these deprecated methods will eventually be removed.
+        [Obsolete("ForeachChild is obsolete. Use foreach with .GetChildren() instead.", true)]
+        public static void ForeachChild(this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
             if (transform == null || action == null)
                 return;
-            if (includeSelf) action(transform);
-
-            for (int i=0; i<transform.childCount; ++i)
-            {
-                action(transform.GetChild(i));
-            }
+            foreach (var child in transform.GetChildren(includeSelf))
+                action(child);
         }
+        [Obsolete("ForeachDescendant is obsolete. Use foreach with .GetDescendants() instead.", true)]
+        public static void ForeachDescendant(this Transform transform, System.Action<Transform> action, bool includeSelf = false)
+        {
+            if (transform == null || action == null)
+                return;
+            foreach (var descendant in transform.GetDescendants(includeSelf))
+                action(descendant);
+        }
+        [Obsolete("ForeachDescendantOfType is obsolete. Use foreach with .GetDescendantsOfType() instead.", true)]
+        public static void ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
+        {
+            if (transform == null || action == null)
+                return;
+            foreach (var descendant in transform.GetDescendantsOfType<T>(includeSelf))
+                action(descendant);
+        }
+        [Obsolete("ForeachDescendantDFS is obsolete. Use foreach with .GetDescendants(useDfsOrder=true) instead.", true)]
+        public static void ForeachDescendantDFS(this Transform transform, System.Action<Transform> action, bool includeSelf = true)
+        {
+            if (transform == null || action == null)
+                return;
+            foreach (var descendant in transform.GetDescendants(includeSelf, true))
+                action(descendant);
+        }
+
         public static void         CopyPositionRotation (this Transform transform, Transform other)
         {
             if (transform == null || other == null) return;

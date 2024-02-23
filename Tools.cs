@@ -29,8 +29,7 @@ namespace sxg
         public static void PrintNumberOfDescendants()
         {
             GameObject selected = UnityEditor.Selection.activeGameObject;
-            int numDescendants = 0;
-            selected.transform.ForeachDescendant(t => ++numDescendants);
+            int numDescendants = selected.transform.DescendantCount();
             Debug.Log($"{selected.name} has {numDescendants} descendants");
         }
 
@@ -44,22 +43,22 @@ namespace sxg
         [MenuItem("Tools/Apply Scale")]
         public static void ApplyScale()
         {
-            GameObject selected = UnityEditor.Selection.activeGameObject;
+            Transform selected = UnityEditor.Selection.activeGameObject.transform;
             List<Vector3> pos = new();
             List<Quaternion> rot = new();
-            selected.transform.ForeachDescendant(t =>
+            foreach (var t in selected.GetDescendants(includeSelf: true))
             {
                 pos.Add(t.position);
                 rot.Add(t.rotation);
-            }, true);
+            }
             int i = 0;
-            selected.transform.ForeachDescendant(t =>
+            foreach (var t in selected.GetDescendants(includeSelf: true))
             {
                 t.localScale = Vector3.one;
                 t.position = pos[i];
                 t.rotation = rot[i];
                 ++i;
-            }, true);
+            }
         }
 
         [MenuItem("Tools/Sort Children/Name")]
