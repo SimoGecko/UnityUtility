@@ -1,3 +1,4 @@
+// (c) Simone Guggiari 2020-2024
 
 using System.Reflection;
 using UnityEditor;

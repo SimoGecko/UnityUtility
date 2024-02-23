@@ -1,4 +1,4 @@
-﻿// (c) Simone Guggiari 2020-2023
+﻿// (c) Simone Guggiari 2020-2024
 
 using System;
 using System.Collections.Generic;
@@ -2364,7 +2364,7 @@ namespace sxg
             // NOTICE the x coordinate is flipped because OBJ is right-handed and Unity Left-handed
             using (StreamWriter sw = new StreamWriter(fullpath))
             {
-                sw.WriteLine($"# Exported Mesh {mesh.name} at {GetTimestampNow()}");
+                sw.WriteLine($"# Exported Mesh {mesh.name}");// at {GetTimestampNow()}");
                 if (mesh.colors.IsNullOrEmpty())
                 {
                     foreach (Vector3 vertex in mesh.vertices)
