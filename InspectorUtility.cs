@@ -7,6 +7,8 @@ using System.Reflection;
 using System;
 using System.Linq;
 using UnityEditor;
+using System.Drawing;
+using System.Reflection.Emit;
 #if SNETCODE
 using Unity.Netcode;
 #endif
@@ -92,6 +94,18 @@ namespace sxg
         }
     }
 
+    [System.AttributeUsage(System.AttributeTargets.Field)]
+    public class Foldout : PropertyAttribute
+    {
+        public Foldout(string label ="", int size = 1)
+        {
+            this.Label = label;
+            this.Size = size;
+        }
+        public string Label { get; private set; }
+        public int Size { get; private set; }
+    }
+
 
     // PURPOSE: Used together with buttons to place them side by side
     // USAGE:
@@ -125,13 +139,21 @@ namespace sxg
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class EditorButtonAttribute : PropertyAttribute
     {
-        public EditorButtonAttribute(string label = "", string tooltip = "")
+        public EditorButtonAttribute(string label = "", string tooltip = "", int size = 0)
         {
             this.Label = label;
             this.Tooltip = tooltip;
+            this.Size = size;
+        }
+        public EditorButtonAttribute(int size)
+        {
+            this.Label = "";
+            this.Tooltip = "";
+            this.Size = size;
         }
         public string Label { get; private set; }
         public string Tooltip { get; private set; }
+        public int Size { get; private set; }
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class)]
@@ -217,6 +239,7 @@ namespace sxg
                 .GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(o => Attribute.IsDefined(o, typeof(EditorButtonAttribute)));
 
+            int buttonsLeft = -1;
             foreach (var memberInfo in methods)
             {
                 EditorButtonAttribute attribute = memberInfo.GetCustomAttribute<EditorButtonAttribute>();
@@ -227,13 +250,19 @@ namespace sxg
                     GUILayout.BeginHorizontal();
                 }
 
+                if (attribute.Size != 0)
+                {
+                    GUILayout.BeginHorizontal();
+                    buttonsLeft = attribute.Size;
+                }
                 if (GUILayout.Button(new GUIContent(label, attribute.Tooltip)))
                 {
                     var method = memberInfo as MethodInfo;
                     method.Invoke(mono, null);
                 }
+                --buttonsLeft;
 
-                if (memberInfo.GetCustomAttribute<LayoutEndHorizontal>() != null)
+                if (memberInfo.GetCustomAttribute<LayoutEndHorizontal>() != null || buttonsLeft == 0)
                 {
                     GUILayout.EndHorizontal();
                 }

@@ -20,6 +20,9 @@ namespace sxg.hl
         private static void HandleHierarchyWindowOnGui(int instanceID, Rect selectionRect)
         {
             var go = EditorUtility.InstanceIDToObject(instanceID) as GameObject;
+            //var icon = FindIcon(go);
+            //if (icon != null)
+            //    DrawIcon(selectionRect, icon);
             var rule = FindRule(go);
             if (rule != null)
                 DrawHighlight(selectionRect, rule);
@@ -30,6 +33,53 @@ namespace sxg.hl
             var rule = FindRule(guid);
             if (rule != null)
                 DrawHighlight(selectionRect, rule);
+        }
+
+        private static string FindIcon(GameObject go)
+        {
+            if (go == null)
+                return null;
+            if (go.transform.childCount > 0 && go.transform.IsIdentity())
+                return "d_Folder Icon";
+            if (!go.transform.IsIdentity() && go.GetComponents<Component>().Length == 1)
+                return "d_Transform Icon";
+            return null;
+        }
+
+
+
+        // icons from https://github.com/halak/unity-editor-icons
+        /*
+        d_Package Manager	
+        GameManager Icon
+        CustomTool
+
+        d_Folder Icon
+        d_Transform Icon
+        cs Script Icon
+        d_Mesh Icon
+        d_BoxCollider Icon
+
+        d_Camera Icon
+        d_Light Icon
+
+        Canvas Icon	
+            d_Button Icon	
+            d_Image Icon	
+            d_InputField Icon	
+            d_Toggle Icon	
+            d_Text Icon	
+
+         */
+
+        private static void DrawIcon(Rect selectionRect, string iconName)
+        {
+            // hide bg
+            Rect bgRect = new(selectionRect.position + Vector2.one * 0, Vector2.one * 16);
+            EditorGUI.DrawRect(bgRect, new Color32(56, 56, 56, 255));
+
+            var icon = EditorGUIUtility.IconContent(iconName);
+            EditorGUI.LabelField(selectionRect, icon);
         }
 
         private static void DrawHighlight(Rect selectionRect, Rule rule)

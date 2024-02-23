@@ -1792,6 +1792,12 @@ namespace sxg
         {
             transform.rotation = rot * transform.rotation;
         }
+        public static bool         IsIdentity           (this Transform transform)
+        {
+            return transform.localPosition == Vector3.zero
+                && transform.localRotation == Quaternion.identity
+                && transform.localScale == Vector3.one;
+        }
 
 
         ////////////////////////// RECTTRANSFORM ////////////////////////////////
