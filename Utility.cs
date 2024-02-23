@@ -411,6 +411,15 @@ namespace sxg
         {
             return vector.sqrMagnitude <= eps * eps;
         }
+        public static Vector2      Perpendicular        (this Vector2 vector)
+        {
+            return Vector2.Perpendicular(vector);
+        }
+        public static bool         IsParallel           (this Vector2 v1, Vector2 v2)
+        {
+            //return (v1.x / v2.x).FuzzyEq(v1.y / v2.y);
+            return Mathf.Abs(Vector2.Dot(v1.normalized, v2.normalized)) > 0.9999f;
+        }
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
@@ -912,7 +921,7 @@ namespace sxg
                 return -1;
             float minCost = float.MaxValue;
             int bestIndex = -1;
-            for (int i = 0; i < enumerable.Count(); i++)
+            for (int i = 0, end = enumerable.Count(); i < end; i++)
             {
                 T element = enumerable.ElementAt(i);
                 if (filter == null || filter(element)) // pass filter
@@ -1391,6 +1400,13 @@ namespace sxg
             if (FindSegmentDistanceToPointSquared(s2, s1.a) <= dist2) return true;
             if (FindSegmentDistanceToPointSquared(s2, s1.b) <= dist2) return true;
             return false;
+        }
+        public static bool         LineIntersection                   (Vector2 point1, Vector2 dir1, Vector2 point2, Vector2 dir2, out Vector2 ans)
+        {
+            dir1.Normalize();
+            dir2.Normalize();
+            float L = 1000f;
+            return Utility.FindSegmentIntersection(point1 - dir1 * L, point1 + dir1 * L, point2 - dir2 * L, point2 + dir2 * L, out ans);
         }
 
 
@@ -2770,6 +2786,12 @@ namespace sxg
             return camera.fieldOfView;
         }
 
+        public static void         Swap<T>(ref T a, ref T b)
+        {
+            T c = a;
+            a = b;
+            b = c;
+        }
     }
 
 }

@@ -100,10 +100,26 @@ namespace sxg
         {
 #if (SEDITOR && UNITY_EDITOR)
             UnityEditor.Handles.color = Gizmos.color;
+            UnityEditor.Handles.lighting = false;
             UnityEditor.Handles.DrawSolidDisc(center, normal, radius);
 #endif
         }
 
+        public static void DrawLabel        (string content, Vector3 position, float minzoom)
+        {
+            Camera sceneCamera = SceneView.lastActiveSceneView?.camera;
+            float zoomFactor = sceneCamera != null ? sceneCamera.orthographicSize : 1f;
+            float maxzoom = minzoom * 3f;
+            float a = Mathf.Clamp01(1f-Mathf.InverseLerp(minzoom, maxzoom, zoomFactor));
+            if (a <= 0)
+                return;
+            Color c = Gizmos.color;
+            Color c2 = c;
+            c2.a *= a;
+            Gizmos.color = c2;
+            DrawLabel(content, position);
+            Gizmos.color = c;
+        }
         public static void DrawLabel        (string content, Vector3 position, int fontSize = 8)
         {
             DrawLabel(content, position, Gizmos.color, fontSize);
@@ -137,20 +153,21 @@ namespace sxg
 #endif
         }
 
-        public static void DrawPath         (Vector2[] points, bool closed = false)
+        public static void DrawPath         (IEnumerable<Vector2> points, bool closed = false)
         {
-            DrawPath(points.Select(p => (Vector3)p).ToArray(), closed);
+            DrawPath(points.Select(p => (Vector3)p), closed);
         }
-        public static void DrawPath         (Vector3[] points, bool closed = false)
+        public static void DrawPath         (IEnumerable<Vector3> points, bool closed = false)
         {
             if (points == null)
                 return;
-            for (int i = 0; i < points.Length-1; i++)
-            {
-                Gizmos.DrawLine(points[i], points[i + 1]);
-            }
-            if (closed && points.Length >= 2)
-                Gizmos.DrawLine(points[^1], points[0]);
+#if (SEDITOR && UNITY_EDITOR)
+            Handles.DrawAAPolyLine(10f, points.ToArray());
+            Handles.color = Gizmos.color;
+            Handles.DrawPolyLine(points.ToArray());
+            if (closed && points.Count() >= 2)
+                Gizmos.DrawLine(points.Last(), points.First());
+#endif
         }
 
         public static void DrawTransform(this Transform transform, float scale = 0.1f, float alpha = 0.93f)
@@ -298,6 +315,23 @@ namespace sxg
                 Handles.DrawWireDisc(Vector3.up * pointOffset, Vector3.up, radius);
                 Handles.DrawWireDisc(Vector3.down * pointOffset, Vector3.up, radius);
             }
+#endif
+        }
+        public static void DrawArrow(Vector3 from, Vector3 to, float size = 0.1f, bool invert = false)
+        {
+            if (invert)
+                Utility.Swap(ref from, ref to);
+            Gizmos.DrawLine(from, to);
+            Vector2 dir = (to-from).normalized *size;
+            Gizmos.DrawLine(to, to - Quaternion.Euler(0, 0, 20) * dir);
+            Gizmos.DrawLine(to, to - Quaternion.Euler(0, 0, -20) * dir);
+        }
+
+        public static void DrawWireArc(Vector2 center, Vector2 from, float angle, float radius)
+        {
+#if (SEDITOR && UNITY_EDITOR)
+            Handles.color = Gizmos.color;
+            Handles.DrawWireArc(center, Vector3.forward, from, angle, radius);
 #endif
         }
     }
