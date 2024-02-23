@@ -6,6 +6,7 @@ using UnityEngine;
 
 ////////// PURPOSE: Allows you to highlight gameobjects in the Hierarchy and assets in the Project view with a color. //////////
 
+#if SEDITOR
 namespace sxg.hl
 {
     [InitializeOnLoad]
@@ -225,3 +226,4 @@ namespace sxg.hl
         }
     }
 }
+#endif

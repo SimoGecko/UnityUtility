@@ -5,6 +5,7 @@ using UnityEngine;
 
 ////////// PURPOSE: Stores data for custom color highlighting. //////////
 
+#if SEDITOR
 namespace sxg.hl
 {
     public class CustomHighlighterSo : ScriptableObject
@@ -12,3 +13,4 @@ namespace sxg.hl
         public List<Rule> rules = new();
     }
 }
+#endif
