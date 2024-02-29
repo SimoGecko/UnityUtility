@@ -27,8 +27,11 @@ namespace sxg
 
 
     ////////////////////////// TRANSF ////////////////////////////////
+    
+    // add this on top of classes that fail compiling due to the rename:
+    // using Transf = sxg.CFrame;
     [System.Serializable]
-    public struct Transf // TODO: rename CFrame
+    public struct CFrame
 #if SNETCODE
         : INetworkSerializable
 #endif
@@ -36,21 +39,21 @@ namespace sxg
         public Vector3 position;
         public Quaternion rotation;
 
-        public Transf(Vector3 position, Quaternion rotation)
+        public CFrame(Vector3 position, Quaternion rotation)
         {
             this.position = position;
             this.rotation = rotation;
         }
-        public Transf(Vector3 position, Vector3 euler)
+        public CFrame(Vector3 position, Vector3 euler)
             : this(position, Quaternion.Euler(euler))
         {
         }
-        public Transf(Vector3 position)
+        public CFrame(Vector3 position)
             : this(position, Quaternion.identity)
         {
         }
 
-        public Transf(Transform t)
+        public CFrame(Transform t)
         : this(t?.position ?? Vector3.zero, t?.rotation ?? Quaternion.identity)
         {
         }
@@ -60,9 +63,9 @@ namespace sxg
         //    Quaternion rot = Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime);
         //    return new(pos, rot);
         //}
-        public static Transf identity => new(Vector3.zero, Quaternion.identity);
+        public static CFrame identity => new(Vector3.zero, Quaternion.identity);
 
-        public static implicit operator Transf(Transform t)
+        public static implicit operator CFrame(Transform t)
         {
             return new(t);
         }
@@ -74,31 +77,31 @@ namespace sxg
         }
 #endif
 
-        public static Transf operator*(Transf a, Transf b)
+        public static CFrame operator*(CFrame a, CFrame b)
         {
-            return new Transf(a.position + (a.rotation * b.position), a.rotation * b.rotation);
+            return new CFrame(a.position + (a.rotation * b.position), a.rotation * b.rotation);
         }
-        public static Transf operator *(Transf a, Transform b)
+        public static CFrame operator *(CFrame a, Transform b)
         {
-            return a * new Transf(b);
+            return a * new CFrame(b);
         }
-        public static Transf operator *(Transform a, Transf b)
+        public static CFrame operator *(Transform a, CFrame b)
         {
-            return new Transf(a) * b;
+            return new CFrame(a) * b;
         }
 
-        public Transf inverse
+        public CFrame inverse
         {
             get
             {
                 Quaternion rotInv = rotation.Inverse();
-                return new Transf(rotInv * (-position), rotInv);
+                return new CFrame(rotInv * (-position), rotInv);
             }
         }
 
-        public static Transf Lerp(Transf a, Transf b, float t)
+        public static CFrame Lerp(CFrame a, CFrame b, float t)
         {
-            return new Transf(
+            return new CFrame(
                 Vector3.Lerp(a.position, b.position, t),
                 Quaternion.Slerp(a.rotation, b.rotation, t));
         }
@@ -113,9 +116,9 @@ namespace sxg
             set => rotation = Utility.QuaternionFromAxisTimesAngle(value);
         }
 
-        public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)// float maxSpeed, float deltaTime)
+        public static CFrame SmoothDamp(CFrame current, CFrame target, ref CFrame currentVelocity, float smoothTime)// float maxSpeed, float deltaTime)
         {
-            return new Transf(
+            return new CFrame(
                 Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime),
                 Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime));
         }

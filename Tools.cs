@@ -6,6 +6,7 @@ using System.Text;
 using System.Linq;
 using UnityEngine;
 using UnityEditor;
+using System.IO;
 #if SNETCODE
 using Unity.Netcode;
 #endif
@@ -236,6 +237,14 @@ namespace sxg
                 Debug.Log("Need to select 2 objects to measure the distance");
             float dist = Vector3.Distance(Selection.gameObjects[0].transform.position, Selection.gameObjects[1].transform.position);
             Debug.Log($"Distance={dist}");
+        }
+
+        [MenuItem("Assets/Create/Shader/Custom Shader Mine", false, 100)] static void CreateCustomShader(MenuCommand menuCommand)
+        {
+            string editorpath = "c:/Program Files/Unity/Hub/Editor/2022.3.12f1/"; // TODO: find indirection
+            string path = "Editor/Data/Resources/ScriptTemplates/";
+            string file = "80-Shader__Custom Shader-NewCustomShader.shader.txt";
+            ProjectWindowUtil.CreateScriptAssetFromTemplateFile($"{editorpath}/{path}/{file}", "NewCustomShader.shader");
         }
 
 #if SNETCODE

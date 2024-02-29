@@ -693,7 +693,7 @@ namespace sxg
             => Vector3.Lerp(a, b, GlerpAlpha(time, dt));
         public static Quaternion   Glerp                (Quaternion a, Quaternion b, float time, float dt)
             => Quaternion.Slerp(a, b, GlerpAlpha(time, dt));
-        public static Transf       Glerp                (Transf a, Transf b, float time, float dt)
+        public static CFrame       Glerp                (CFrame a, CFrame b, float time, float dt)
         {
             float t = GlerpAlpha(time, dt);
             return new(Vector3.Lerp(a.position, b.position, t), Quaternion.Slerp(a.rotation, b.rotation, t));
@@ -1622,8 +1622,9 @@ namespace sxg
                 }
             }
         }
-        public static IEnumerable<T> GetDescendantsOfType<T>(this Transform transform, bool includeSelf = false, bool useDfsOrder = false)
+        public static IEnumerable<T> GetDescendantsOfType<T>(this Transform transform, bool includeSelf = false, bool useDfsOrder = false) where T : Component
         {
+            // TODO: ensure that no gameobject has multiple components of the same type
             return transform.GetDescendants(includeSelf, useDfsOrder).Select(t => t.GetComponent<T>()).Where(c => c != null);
         }
         public static Transform    FindDescendant       (this Transform transform, string name)
@@ -1665,7 +1666,7 @@ namespace sxg
                 action(descendant);
         }
         [Obsolete("ForeachDescendantOfType is obsolete. Use foreach with .GetDescendantsOfType() instead.", true)]
-        public static void ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false)
+        public static void ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false) where T : Component
         {
             if (transform == null || action == null)
                 return;
@@ -1827,27 +1828,27 @@ namespace sxg
                 return t.GetComponent<T>();
             return default(T);
         }
-        public static void         Set                  (this Transform transform, Transf transf)
+        public static void         Set                  (this Transform transform, CFrame transf)
         {
             transform.position = transf.position;
             transform.rotation = transf.rotation;
         }
-        public static void         SetLocal             (this Transform transform, Transf transf)
+        public static void         SetLocal             (this Transform transform, CFrame transf)
         {
             transform.localPosition = transf.position;
             transform.localRotation = transf.rotation;
         }
-        public static Transf       GetTransf            (this Transform transform)
+        public static CFrame       GetTransf            (this Transform transform)
         {
             return new(transform.position, transform.rotation);
         }
-        public static Transf       GetTransfLocal       (this Transform transform)
+        public static CFrame       GetTransfLocal       (this Transform transform)
         {
             return new(transform.localPosition, transform.localRotation);
         }
-        public static Transf       Inverse              (this Transform transform)
+        public static CFrame       Inverse              (this Transform transform)
         {
-            return new Transf(transform).inverse;
+            return new CFrame(transform).inverse;
         }
         public static void         PreRotate            (this Transform transform, Quaternion rot)
         {
@@ -2544,6 +2545,12 @@ namespace sxg
             }
         }
 
+        public static GameObject   Find                 (string name, bool includeInactive = false)
+        {
+            if (!includeInactive)
+                return GameObject.Find(name);
+            return GameObject.FindObjectsOfType<GameObject>(true).Where(go => go.name == name).FirstOrDefault();
+        }
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
         private static string F(float value) => $"{value:0.00000}f";
