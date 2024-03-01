@@ -1,5 +1,6 @@
 // (c) Simone Guggiari 2020-2024
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 #if SNETCODE
@@ -10,33 +11,43 @@ using Unity.Netcode;
 
 namespace sxg
 {
-    public class Manager<T> : MonoBehaviour where T : MonoBehaviour
+    [Obsolete("Manager<T> is obsolete. Use Singleton<T> instead.", false)]
+    public class Manager<T> : Singleton<T> where T : MonoBehaviour { }
+
+    public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {
         private static T instance;
         public static T Instance
         {
             get
             {
-                if (instance == null) instance = FindObjectOfType<T>();
+                if (instance == null)
+                    instance = FindObjectOfType<T>();
+                //Debug.Assert(FindObjectsOfType<T>().Length <= 1, $"Singleton: multiple instances of {nameof(T)}");
                 return instance;
             }
         }
 
-        public virtual void OnDestroy()
+        protected virtual void OnDestroy()
         {
             instance = null;
         }
     }
 
 #if SNETCODE
-    public class NetworkedManager<T> : NetworkBehaviour where T : NetworkBehaviour
+    [Obsolete("NetworkedManager<T> is obsolete. Use NetworkedSingleton<T> instead.", false)]
+    public class NetworkedManager<T> : NetworkedSingleton<T> where T : NetworkBehaviour { }
+
+    // TODO: Merge with Singleton<T>?
+    public class NetworkedSingleton<T> : NetworkBehaviour where T : NetworkBehaviour
     {
         private static T instance;
         public static T Instance
         {
             get
             {
-                if (instance == null) instance = FindObjectOfType<T>();
+                if (instance == null)
+                    instance = FindObjectOfType<T>();
                 return instance;
             }
         }

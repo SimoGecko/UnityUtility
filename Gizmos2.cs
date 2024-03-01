@@ -60,7 +60,7 @@ namespace sxg
         }
         public static void DrawWireRect     (Rect rect)
         {
-            DrawWireRect(rect.center, rect.size);
+            Gizmos.DrawWireCube(rect.center, rect.size);
         }
         public static void DrawWireSphere   (Vector3 center, float radius)
         {
