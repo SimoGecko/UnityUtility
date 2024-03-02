@@ -230,17 +230,58 @@ namespace sxg
         }
     }
 
+    public class MyEditorWindow : EditorWindow
+    //public class EditorWindow<T> : EditorWindow where T : EditorWindow
+    {
+        /*
+        [MenuItem("Window/Window Name")]
+        public static void ShowWindow()
+        {
+            EditorWindow.GetWindow(typeof(T));
+        }
+        */
+
+        private Vector2 scrollPosition = Vector2.zero;
+
+        protected virtual void OnGUI()
+        {
+            // scroll isn't working
+            scrollPosition = EditorGUILayout.BeginScrollView(Vector2.zero, GUIStyle.none);
+
+            var fieldNames = GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                          .Select(field => field.Name)
+                          .ToArray();
+
+            ScriptableObject scriptableObj = this;
+            SerializedObject serialObj = new SerializedObject(scriptableObj);
+
+            foreach (string fieldName in fieldNames)
+            {
+                SerializedProperty serialProp = serialObj.FindProperty(fieldName);
+                EditorGUILayout.PropertyField(serialProp, true);
+            }
+            serialObj.ApplyModifiedProperties();
+
+            // TODO: Draw additional method parameters as required
+            ButtonDrawerHelper.DrawButtonsForType(this.GetType(), this);
+
+            EditorGUILayout.EndScrollView();
+        }
+
+        protected Transform Target => Selection.activeGameObject.transform;
+    }
+
     static class ButtonDrawerHelper
     {
-        public static void DrawButtonsForType(Type type, MonoBehaviour mono)
+        public static void DrawButtonsForType(Type type, object obj)
         {
             //var methods = typeof(MonoBehaviour) // base
-            var methods = type // derived
+            var members = type // derived
                 .GetMembers(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic)
                 .Where(o => Attribute.IsDefined(o, typeof(EditorButtonAttribute)));
 
             int buttonsLeft = -1;
-            foreach (var memberInfo in methods)
+            foreach (var memberInfo in members)
             {
                 EditorButtonAttribute attribute = memberInfo.GetCustomAttribute<EditorButtonAttribute>();
                 string label = string.IsNullOrEmpty(attribute.Label) ? Prettify(memberInfo.Name) : attribute.Label;
@@ -258,7 +299,7 @@ namespace sxg
                 if (GUILayout.Button(new GUIContent(label, attribute.Tooltip)))
                 {
                     var method = memberInfo as MethodInfo;
-                    method.Invoke(mono, null);
+                    method.Invoke(obj, null);
                 }
                 --buttonsLeft;
 
