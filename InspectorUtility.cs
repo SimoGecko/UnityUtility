@@ -21,7 +21,7 @@ using Unity.Netcode;
 
 namespace sxg
 {
-#if (SEDITOR && UNITY_EDITOR)
+#if SEDITOR
 
     // PURPOSE: Shows a property as readonly
     // USAGE:

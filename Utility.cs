@@ -2473,9 +2473,9 @@ namespace sxg
         }
         public static void         SetDirty             (this UnityEngine.Object obj)
         {
-#if (SEDITOR && UNITY_EDITOR)
+#if SEDITOR
             UnityEditor.EditorUtility.SetDirty(obj);
-#endif // (SEDITOR && UNITY_EDITOR)
+#endif // SEDITOR
         }
         public static string       GetPath              (this GameObject go)
         {
@@ -2819,11 +2819,11 @@ namespace sxg
         ////////////////////////// CAMERA ////////////////////////////////
         public static Vector3      EditorCameraPos()
         {
-#if (SEDITOR && UNITY_EDITOR)
+#if SEDITOR
             return UnityEditor.SceneView.lastActiveSceneView.camera.transform.position;
 #else
             return Vector3.zero;
-#endif // (SEDITOR && UNITY_EDITOR)
+#endif // SEDITOR
         }
         public static float        HorizontalFieldOfView(this Camera camera)
         {

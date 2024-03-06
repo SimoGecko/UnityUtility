@@ -17,7 +17,7 @@ namespace sxg
 {
     public static class Tools
     {
-#if (SEDITOR && UNITY_EDITOR)
+#if SEDITOR
         [MenuItem("Tools/Print Num Children")]
         public static void PrintNumberOfChildren()
         {
@@ -280,6 +280,6 @@ namespace sxg
         }
 #endif
 
-#endif // (SEDITOR && UNITY_EDITOR)
+#endif // SEDITOR
     }
 }
