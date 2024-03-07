@@ -114,7 +114,7 @@ namespace sxg
             }
             return ans;
         }
-        
+
 
         ////////////////////////// ANGLE ////////////////////////////////
         public static float        Canonicalize         (float angleDeg)
@@ -1649,7 +1649,7 @@ namespace sxg
             return transform.GetDescendants().Count();
         }
         // NOTES: these deprecated methods will eventually be removed.
-        [Obsolete("ForeachChild is obsolete. Use foreach with .GetChildren() instead.", true)]
+        [Obsolete("ForeachChild is obsolete. Use foreach with .GetChildren() instead.", false)]
         public static void ForeachChild(this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
             if (transform == null || action == null)
@@ -1657,7 +1657,7 @@ namespace sxg
             foreach (var child in transform.GetChildren(includeSelf))
                 action(child);
         }
-        [Obsolete("ForeachDescendant is obsolete. Use foreach with .GetDescendants() instead.", true)]
+        [Obsolete("ForeachDescendant is obsolete. Use foreach with .GetDescendants() instead.", false)]
         public static void ForeachDescendant(this Transform transform, System.Action<Transform> action, bool includeSelf = false)
         {
             if (transform == null || action == null)
@@ -1665,7 +1665,7 @@ namespace sxg
             foreach (var descendant in transform.GetDescendants(includeSelf))
                 action(descendant);
         }
-        [Obsolete("ForeachDescendantOfType is obsolete. Use foreach with .GetDescendantsOfType() instead.", true)]
+        [Obsolete("ForeachDescendantOfType is obsolete. Use foreach with .GetDescendantsOfType() instead.", false)]
         public static void ForeachDescendantOfType<T>(this Transform transform, System.Action<T> action, bool includeSelf = false) where T : Component
         {
             if (transform == null || action == null)
@@ -1673,7 +1673,7 @@ namespace sxg
             foreach (var descendant in transform.GetDescendantsOfType<T>(includeSelf))
                 action(descendant);
         }
-        [Obsolete("ForeachDescendantDFS is obsolete. Use foreach with .GetDescendants(useDfsOrder=true) instead.", true)]
+        [Obsolete("ForeachDescendantDFS is obsolete. Use foreach with .GetDescendants(useDfsOrder=true) instead.", false)]
         public static void ForeachDescendantDFS(this Transform transform, System.Action<Transform> action, bool includeSelf = true)
         {
             if (transform == null || action == null)
@@ -1724,6 +1724,33 @@ namespace sxg
                 return vector;
             return transform.TransformVector(vector);
         }
+        public static Vector3      ToLocalPNoScale      (this Transform transform, Vector3 point)
+        {
+            if (!transform)
+                return point;
+            return transform.rotation.Inverse() * (point - transform.position);
+        }
+        public static Vector3      ToWorldPNoScale      (this Transform transform, Vector3 point)
+        {
+            if (!transform)
+                return point;
+            return transform.position + transform.rotation * point;
+        }
+        public static Vector3      ToLocalVNoScale      (this Transform transform, Vector3 vector)
+        {
+            if (!transform)
+                return vector;
+            return transform.rotation.Inverse() * vector;
+            //return transform.InverseTransformDirection(vector); // isn't this the same?
+        }
+        public static Vector3      ToWorldVNoScale      (this Transform transform, Vector3 vector)
+        {
+            if (!transform)
+                return vector;
+            return transform.rotation * vector;
+            //return transform.TransformDirection(vector); // isn't this the same?
+        }
+        
         public static Quaternion   ToLocal              (this Transform transform, Quaternion q)
         {
             if (!transform)
