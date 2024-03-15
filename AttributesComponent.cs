@@ -126,6 +126,7 @@ namespace sxg.rym2
 
     }
 
+#if SEDITOR
     [CustomEditor(typeof(AttributesComponent))]
     public class AttributesComponentEditor : Editor
     {
@@ -210,6 +211,7 @@ namespace sxg.rym2
 
         }
     }
+#endif
 
     public static class AttributesExtensions
     {

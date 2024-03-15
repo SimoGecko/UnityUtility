@@ -107,8 +107,12 @@ namespace sxg
 
         public static void DrawLabel        (string content, Vector3 position, float minzoom)
         {
+#if SEDITOR
             Camera sceneCamera = SceneView.lastActiveSceneView?.camera;
             float zoomFactor = sceneCamera != null ? sceneCamera.orthographicSize : 1f;
+#else
+            float zoomFactor = 1f;
+#endif
             float maxzoom = minzoom * 3f;
             float a = Mathf.Clamp01(1f-Mathf.InverseLerp(minzoom, maxzoom, zoomFactor));
             if (a <= 0)
