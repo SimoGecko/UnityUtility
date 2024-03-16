@@ -698,6 +698,16 @@ namespace sxg
             float t = GlerpAlpha(time, dt);
             return new(Vector3.Lerp(a.position, b.position, t), Quaternion.Slerp(a.rotation, b.rotation, t));
         }
+        public static float        SmoothStep           (float t)
+        {
+            t = Mathf.Clamp01(t);
+            return t * t * (3 - 2 * t);
+        }
+        public static float        SmootherStep         (float t)
+        {
+            t = Mathf.Clamp01(t);
+            return t * t * t * (t * (t * 6 - 15) + 10);
+        }
 
 
         ////////////////////////// RANDOM ////////////////////////////////
@@ -2577,6 +2587,7 @@ namespace sxg
                 return GameObject.Find(name);
             return GameObject.FindObjectsOfType<GameObject>(true).Where(go => go.name == name).FirstOrDefault();
         }
+
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
         private static string F(float value) => $"{value:0.00000}f";
