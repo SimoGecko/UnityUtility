@@ -2275,11 +2275,10 @@ namespace sxg
         {
             Debug.Assert(mb != null, "Trying to call Invoke on a null monobehavior");
             Debug.Assert(delay >= 0f, "Delay to invoke is <0");
-            if (delay <= 0f) action();
+            if (delay <= 0f)
+                action();
             else
-            {
                 mb.StartCoroutine(PrivateInvokeRoutine(action, delay));
-            }
         }
         public static void         Invoke               (Action action, float delay)
         {

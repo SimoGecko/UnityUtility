@@ -86,13 +86,13 @@ namespace sxg
             OnPathChanged?.Invoke();
         }
 
-        public int N { get { return points.IsNullOrEmpty() ? 0 : points.Count; } }
-        public int Count { get { return N; } }
-        public Vector2 Get(int index) { return points.Get(index); }
-        public bool IsNullOrEmpty() { return points.IsNullOrEmpty(); }
-        public float Length { get { return length; } }
-        public Rect Bounds { get { return bounds; } }
-        public List<Vector2> Vertices { get { return points; } }
+        public int N => points.IsNullOrEmpty() ? 0 : points.Count;
+        public int Count => N;
+        public Vector2 Get(int index) => points.Get(index);
+        public bool IsNullOrEmpty() => points.IsNullOrEmpty();
+        public float Length => length;
+        public Rect Bounds => bounds;
+        public List<Vector2> Vertices => points;
         public List<Vector2> GetRange(int first, int last)
         {
             return points.GetRange(first, last);
@@ -153,7 +153,7 @@ namespace sxg
             return Mathf.Sqrt(minSqrDist);
         }
 
-        public Vector2 this[int index] { get { return points[index]; } }
+        public Vector2 this[int index] => points[index];
 
         private void ComputeLength()
         {

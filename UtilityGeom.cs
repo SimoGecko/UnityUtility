@@ -20,8 +20,8 @@ namespace sxg
             this.c = c;
         }
 
-        public float Area  { get { return Utility.GetTriangleArea  (a, b, c); } }
-        public Vector2 Com { get { return Utility.GetTriangleCenter(a, b, c); } }
+        public float Area  => Utility.GetTriangleArea  (a, b, c);
+        public Vector2 Com => Utility.GetTriangleCenter(a, b, c);
     }
 
     [System.Serializable]
@@ -36,12 +36,12 @@ namespace sxg
             this.b = b;
         }
 
-        public float Length                            { get { return Vector2.Distance(a, b); } }
-        public bool Intersects(Segment other)          { return Utility.SegmentsIntersect(a, b, other.a, other.b); }
-        public Vector2 FindIntersection(Segment other) { return Utility.FindSegmentsIntersectionExpected(a, b, other.a, other.b); }
+        public float Length                            => Vector2.Distance(a, b);
+        public bool Intersects(Segment other)          => Utility.SegmentsIntersect(a, b, other.a, other.b);
+        public Vector2 FindIntersection(Segment other) => Utility.FindSegmentsIntersectionExpected(a, b, other.a, other.b);
 
-        public float DistanceToPoint(Vector2 p)        { return Mathf.Sqrt(DistanceToPointSquared(p)); }
-        public float DistanceToPointSquared(Vector2 p) { return Utility.FindSegmentDistanceToPointSquared(a, b, p); }
+        public float DistanceToPoint(Vector2 p)        => Mathf.Sqrt(DistanceToPointSquared(p));
+        public float DistanceToPointSquared(Vector2 p) => Utility.FindSegmentDistanceToPointSquared(a, b, p);
     }
 
     [System.Serializable]
@@ -62,9 +62,9 @@ namespace sxg
             return Vector2.SqrMagnitude(point - center) <= radius * radius;
         }
 
-        public float Area                  { get { return radius * radius * Mathf.PI; } }
-        public float Perimeter             { get { return radius * 2f * Mathf.PI; } }
-        public Vector2 GetPoint(Vector2 v) { return center + v * radius; }
+        public float Area                  => radius * radius * Mathf.PI;
+        public float Perimeter             => radius * 2f * Mathf.PI;
+        public Vector2 GetPoint(Vector2 v) => center + v * radius;
 
         public static Circle Lerp(Circle a, Circle b, float t)
         {
