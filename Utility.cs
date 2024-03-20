@@ -2233,6 +2233,10 @@ namespace sxg
         {
             return Regex.IsMatch(input, $"^{pattern}$");
         }
+        public static bool         IsRegexMatch         (this string input, string pattern)
+        {
+            return IsRegexMatch(input, pattern, out _);
+        }
         public static bool         IsRegexMatch         (this string input, string pattern, out string[] tokens)
         {
             Regex regex = new(pattern);
