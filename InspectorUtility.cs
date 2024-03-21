@@ -246,14 +246,14 @@ namespace sxg
         protected virtual void OnGUI()
         {
             // scroll isn't working
-            scrollPosition = EditorGUILayout.BeginScrollView(Vector2.zero, GUIStyle.none);
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUIStyle.none);
 
             var fieldNames = GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
                           .Select(field => field.Name)
                           .ToArray();
 
             ScriptableObject scriptableObj = this;
-            SerializedObject serialObj = new SerializedObject(scriptableObj);
+            SerializedObject serialObj = new(scriptableObj);
 
             foreach (string fieldName in fieldNames)
             {
@@ -315,7 +315,7 @@ namespace sxg
             // Check that is starts with EDITOR_
             if (methodName.StartsWith("EDITOR_"))
             {
-                methodName = methodName[7..];
+                methodName = methodName.TrimStart("EDITOR_");
             }
             else
             {

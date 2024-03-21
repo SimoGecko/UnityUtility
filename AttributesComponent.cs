@@ -245,60 +245,60 @@ namespace sxg
         [EditorButton]
         public void EDITOR_Test()
         {
-            go.SetAttribute("myint", 3);
-            int myint = go.GetAttribute<int>("myint");
+            Go.SetAttribute("myint", 3);
+            int myint = Go.GetAttribute<int>("myint");
             Debug.Assert(myint == 3);
 
-            go.RemoveAttribute("myint");
-            myint = go.GetAttribute<int>("myint");
+            Go.RemoveAttribute("myint");
+            myint = Go.GetAttribute<int>("myint");
             Debug.Assert(myint == 0);
 
-            go.SetAttribute("myvec", new Vector3(1, 2, 3));
-            Vector3 myvec = go.GetAttribute<Vector3>("myvec");
+            Go.SetAttribute("myvec", new Vector3(1, 2, 3));
+            Vector3 myvec = Go.GetAttribute<Vector3>("myvec");
             Debug.Assert(myvec == new Vector3(1, 2, 3));
 
-            Vector3 myvec_no = go.GetAttribute<Vector3>("myvec_notfound");
+            Vector3 myvec_no = Go.GetAttribute<Vector3>("myvec_notfound");
             Debug.Assert(myvec_no == Vector3.zero);
 
-            go.SetAttribute("mystr", $"test string {4}");
-            string mystr = go.GetAttribute<string>("mystr");
+            Go.SetAttribute("mystr", $"test string {4}");
+            string mystr = Go.GetAttribute<string>("mystr");
             Debug.Assert(mystr == "test string 4");
 
-            go.SetAttribute("mystr", (string)null);
-            mystr = go.GetAttribute<string>("mystr");
+            Go.SetAttribute("mystr", (string)null);
+            mystr = Go.GetAttribute<string>("mystr");
             Debug.Assert(mystr == null);
 
-            go.SetAttribute("mytr", go.transform);
-            Transform mytr = go.GetAttribute<Transform>("mytr");
-            Debug.Assert(mytr == go.transform);
+            Go.SetAttribute("mytr", Go.transform);
+            Transform mytr = Go.GetAttribute<Transform>("mytr");
+            Debug.Assert(mytr == Go.transform);
 
             Debug.Log("all tests passed");
         }
         public void EDITOR_Clear()
         {
-            go.ClearAttributes();
+            Go.ClearAttributes();
         }
         public void EDITOR_Populate()
         {
-            go.SetAttribute("mybool", true);
-            go.SetAttribute("myint", 3);
-            go.SetAttribute("myfloat", 3.14f);
-            go.SetAttribute("mystr", "hi there");
-            go.SetAttribute("myvec2", new Vector2(1f, 2f));
-            go.SetAttribute("myvec3", new Vector3(1f, 2f, 3f));
-            go.SetAttribute("myvec4", new Vector4(1f, 2f, 3f, 4f));
-            go.SetAttribute("myquat", Quaternion.Euler(90f, 0f, 0f));
+            Go.SetAttribute("mybool", true);
+            Go.SetAttribute("myint", 3);
+            Go.SetAttribute("myfloat", 3.14f);
+            Go.SetAttribute("mystr", "hi there");
+            Go.SetAttribute("myvec2", new Vector2(1f, 2f));
+            Go.SetAttribute("myvec3", new Vector3(1f, 2f, 3f));
+            Go.SetAttribute("myvec4", new Vector4(1f, 2f, 3f, 4f));
+            Go.SetAttribute("myquat", Quaternion.Euler(90f, 0f, 0f));
             //go.SetAttribute("mycframe", null);
-            go.SetAttribute("mycol", Color.blue);
-            go.SetAttribute("mygo", go);
-            go.SetAttribute("mytr", go.transform);
-            go.SetAttribute("mycomp", go.GetComponent<AttributesComponent>());
-            go.SetAttribute("mymat", (Material)null);
+            Go.SetAttribute("mycol", Color.blue);
+            Go.SetAttribute("mygo", Go);
+            Go.SetAttribute("mytr", Go.transform);
+            Go.SetAttribute("mycomp", Go.GetComponent<AttributesComponent>());
+            Go.SetAttribute("mymat", (Material)null);
         }
 #endif
 
         // queries
-        GameObject go => gameObject;
+        GameObject Go => gameObject;
         public Dictionary<string, object> Attributes => attributes;
 
         // other
@@ -333,30 +333,30 @@ namespace sxg
                     continue;
 
                 //attributes[key] = EditorGUILayout.ObjectField(key, (UnityEngine.Object)value, typeof(UnityEngine.Object), true);
-                if (value is bool)
-                    attributes[key] = EditorGUILayout.Toggle(key, (bool)value);
-                else if (value is int)
-                    attributes[key] = EditorGUILayout.IntField(key, (int)value);
-                else if (value is float)
-                    attributes[key] = EditorGUILayout.FloatField(key, (float)value);
-                else if (value is string)
-                    attributes[key] = EditorGUILayout.TextField(key, (string)value);
-                else if (value is Vector2)
-                    attributes[key] = EditorGUILayout.Vector2Field(key, (Vector2)value);
-                else if (value is Vector3)
-                    attributes[key] = EditorGUILayout.Vector3Field(key, (Vector3)value);
-                else if (value is Vector4)
-                    attributes[key] = EditorGUILayout.Vector4Field(key, (Vector4)value);
-                else if (value is Quaternion)
-                    attributes[key] = Quaternion.Euler(EditorGUILayout.Vector3Field(key, ((Quaternion)value).eulerAngles)); // Euler view -> has some problems
+                if (value is bool b)
+                    attributes[key] = EditorGUILayout.Toggle(key, b);
+                else if (value is int i)
+                    attributes[key] = EditorGUILayout.IntField(key, i);
+                else if (value is float f)
+                    attributes[key] = EditorGUILayout.FloatField(key, f);
+                else if (value is string s)
+                    attributes[key] = EditorGUILayout.TextField(key, s);
+                else if (value is Vector2 v2)
+                    attributes[key] = EditorGUILayout.Vector2Field(key, v2);
+                else if (value is Vector3 v3)
+                    attributes[key] = EditorGUILayout.Vector3Field(key, v3);
+                else if (value is Vector4 v4)
+                    attributes[key] = EditorGUILayout.Vector4Field(key, v4);
+                else if (value is Quaternion q)
+                    attributes[key] = Quaternion.Euler(EditorGUILayout.Vector3Field(key, q.eulerAngles)); // Euler view -> has some problems
                 //else if (value.GetType() == typeof(CFrame))
                 //    attributes[key] = EditorGUILayout.TextField(key, (CFrame)value);
-                else if (value is Color)
-                    attributes[key] = EditorGUILayout.ColorField(key, (Color)value);
-                else if (value is GameObject)
-                    attributes[key] = EditorGUILayout.ObjectField(key, (GameObject)value, value.GetType(), true);
-                else if (value is Component)
-                    attributes[key] = EditorGUILayout.ObjectField(key, (Component)value, value.GetType(), true);
+                else if (value is Color c)
+                    attributes[key] = EditorGUILayout.ColorField(key, c);
+                else if (value is GameObject go)
+                    attributes[key] = EditorGUILayout.ObjectField(key, go, value.GetType(), true);
+                else if (value is Component co)
+                    attributes[key] = EditorGUILayout.ObjectField(key, co, value.GetType(), true);
                 else
                 {
                     GUI.enabled = false;
@@ -402,8 +402,7 @@ namespace sxg
     {
         public static T GetAttribute<T>(this GameObject go, string name)
         {
-            AttributesComponent att = go.GetComponent<AttributesComponent>();
-            if (att == null)
+            if (!go.TryGetComponent<AttributesComponent>(out var att))
                 return default;
             object value = att.Get(name);
             if (value == null)

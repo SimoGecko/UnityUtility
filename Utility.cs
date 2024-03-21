@@ -20,7 +20,8 @@ namespace sxg
     // Naming: Get / Find / Compute / 
     public static partial class Utility
     {
-        static float eps = 1e-4f;
+        static readonly float eps = 1e-4f;
+
         ////////////////////////// MATH ////////////////////////////////
         public static int          Mod                  (this int value, int mod)
         {
@@ -333,7 +334,7 @@ namespace sxg
                 Mathf.Clamp(vector.x, min, max),
                 Mathf.Clamp(vector.y, min, max));
         }
-        public static Vector2 ClampComponents(this Vector2 vector, Vector2 min, Vector2 max)
+        public static Vector2      ClampComponents      (this Vector2 vector, Vector2 min, Vector2 max)
         {
             return new Vector2(
                 Mathf.Clamp(vector.x, min.x, max.x),
@@ -512,9 +513,11 @@ namespace sxg
             return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
 
+#pragma warning disable IDE1006
         public static Vector3      xAxis                => Vector3.right;
         public static Vector3      yAxis                => Vector3.up;
         public static Vector3      zAxis                => Vector3.forward;
+#pragma warning restore IDE1006
 
 
         ////////////////////////// QUATERNION ////////////////////////////////
@@ -759,7 +762,7 @@ namespace sxg
             Debug.LogError("wheel of fortune didn't finish");
             return -1;
         }
-        public static int WheelOfFortune2(float[] a, float randValue)
+        public static int          WheelOfFortune2      (float[] a, float randValue)
         {
             Debug.Assert(!a.IsNullOrEmpty() && a.All(x => x >= 0f));
             Debug.Assert(randValue >= 0f && randValue <= 1f);
@@ -845,7 +848,7 @@ namespace sxg
         {
             return System.HashCode.Combine(mb.GetHashCode(), number);
         }
-        public static uint hash(uint state)
+        public static uint         Hash                 (uint state)
         {
             // https://www.cs.ubc.ca/~rebridson/docs/schechter-sca08-turbulence.pdf
             state ^= 2747636419u;
@@ -918,7 +921,7 @@ namespace sxg
             }
             return -1;
         }
-        public static T            FindBest<T>          (this IEnumerable<T> enumerable, Func<T, float> costFunction, Predicate<T> filter = null, T defaultT = default)
+        public static T            FindBest<T>          (this IEnumerable<T> enumerable, Func<T, float> costFunction, Predicate<T> filter = null)
         {
             int bestIndex = FindBestIndex<T>(enumerable, costFunction, filter);
             if (bestIndex != -1)
@@ -1087,7 +1090,7 @@ namespace sxg
             {
                 list.Add(item);
             }
-            else if (comparer.Compare(list[list.Count - 1], item) <= 0)
+            else if (comparer.Compare(list[^1], item) <= 0)
             {
                 list.Add(item);
             }
@@ -1107,20 +1110,18 @@ namespace sxg
         {
             if (list1 != null && list2 != null)
             {
-                using (var enumerator1 = list1.GetEnumerator())
-                using (var enumerator2 = list2.GetEnumerator())
+                using var enumerator1 = list1.GetEnumerator();
+                using var enumerator2 = list2.GetEnumerator();
+                while (enumerator1.MoveNext() && enumerator2.MoveNext())
                 {
-                    while (enumerator1.MoveNext() && enumerator2.MoveNext())
-                    {
 
-                        yield return (
-                            enumerator1.Current,
-                            enumerator2.Current);
-                    }
+                    yield return (
+                        enumerator1.Current,
+                        enumerator2.Current);
                 }
             }
         }
-        // TODO: Deprecate the following two methods
+        [Obsolete("Method is deprecated", true)]
         public static void         ForeachPair<T>       (this List<T> list, System.Action<T, T> action)
         {
             if (list == null || action == null)
@@ -1133,6 +1134,7 @@ namespace sxg
                 }
             }
         }
+        [Obsolete("Method is deprecated", true)]
         public static void         ForeachPair<T>       (this List<T> list1, List<T> list2, System.Action<T, T> action)
         {
             if (list1 == null || list2 == null || action == null)
@@ -1152,15 +1154,13 @@ namespace sxg
             {
                 n--;
                 int k = prng != null ? prng.Next(n + 1) : UnityEngine.Random.Range(0, n + 1);
-                T value = list[k];
-                list[k] = list[n];
-                list[n] = value;
+                (list[n], list[k]) = (list[k], list[n]);
             }
         }
         public static T            Pop<T>               (this IList<T> list)
         {
             if (list.Count == 0)
-                return default(T);
+                return default;
             T ans = list[list.Count - 1];
             list.RemoveAt(list.Count - 1);
             return ans;
@@ -1523,8 +1523,7 @@ namespace sxg
         public static void         SortChildren         (this Transform transform, bool recursive = false, Comparison<Transform> comparison = null)
         {
             // PURPOSE: Sorts the children of the given gameobject by name
-            if (comparison == null)
-                comparison = (t1, t2) => t1.name.CompareTo(t2.name);
+            comparison ??= (t1, t2) => t1.name.CompareTo(t2.name);
             Transform[] ts = new Transform[transform.childCount];
             for (int i = 0; i < transform.childCount; i++)
             {
@@ -1543,7 +1542,7 @@ namespace sxg
         }
         public static void         SortChildrenByVolume (this Transform transform)
         {
-            float Volume(Transform t)
+            static float Volume(Transform t)
             {
                 return t.GetComponentInChildren<MeshRenderer>()?.localBounds.Volume() ?? 0f;
             }
@@ -1577,7 +1576,7 @@ namespace sxg
                 yield return transform.GetChild(i);
             }
         }
-        public static IEnumerable<T> GetChildrenOfType<T>(this Transform transform, bool includeSelf = false)
+        public static IEnumerable<T> GetChildrenOfType<T>(this Transform transform, bool includeSelf = false) where T: Component
         {
             return transform.GetChildren(includeSelf).Select(t => t.GetComponent<T>()).Where(c => c != null);
         }
@@ -1695,13 +1694,11 @@ namespace sxg
         public static void         CopyPositionRotation (this Transform transform, Transform other)
         {
             if (transform == null || other == null) return;
-            transform.position = other.position;
-            transform.rotation = other.rotation;
+            transform.SetPositionAndRotation(other.position, other.rotation);
         }
         public static void         Reset                (this Transform transform)
         {
-            transform.localPosition = Vector3.zero;
-            transform.localRotation = Quaternion.identity;
+            transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             transform.localScale = Vector3.one;
         }
         public static void         Clean                (this Transform transform, float eps = 1e-4f)
@@ -1806,8 +1803,8 @@ namespace sxg
             for (int i = 0; i < transform.childCount; i++)
             {
                 Transform t = transform.GetChild(i);
-                t.localRotation = Quaternion.identity;
-                t.localPosition = new Vector3(i % splayCount, 0, i / splayCount) * splayAmount;
+                Vector3 pos = new Vector3(i % splayCount, 0, i / splayCount) * splayAmount;
+                t.SetLocalPositionAndRotation(pos, Quaternion.identity);
             }
         }
         public static int          Depth                (this Transform transform, Transform ancestor)
@@ -1830,7 +1827,7 @@ namespace sxg
             else
             {
                 Matrix4x4 m = transform.localToWorldMatrix;
-                Bounds b = new Bounds();
+                Bounds b = new();
                 for (int i = 0; i < mrs.Length; i++)
                 {
                     Matrix4x4 m2 = mrs[i].transform.localToWorldMatrix;
@@ -1855,25 +1852,23 @@ namespace sxg
         }
         public static Vector3      GetCorner            (this Bounds b, int index)
         {
-            Vector3 x = new Vector3((index & 1), (index >> 1) & 1, (index >> 2) & 1);
+            Vector3 x = new((index & 1), (index >> 1) & 1, (index >> 2) & 1);
             return b.min + b.size.Mult(x);
         }
-        public static T            Find<T>              (this Transform transform, string nameOrPath)
+        public static T            Find<T>              (this Transform transform, string nameOrPath) where T : Component
         {
             Transform t = transform.Find(nameOrPath);
             if (t != null)
                 return t.GetComponent<T>();
-            return default(T);
+            return default;
         }
         public static void         Set                  (this Transform transform, CFrame transf)
         {
-            transform.position = transf.position;
-            transform.rotation = transf.rotation;
+            transform.SetPositionAndRotation(transf.position, transf.rotation);
         }
         public static void         SetLocal             (this Transform transform, CFrame transf)
         {
-            transform.localPosition = transf.position;
-            transform.localRotation = transf.rotation;
+            transform.SetLocalPositionAndRotation(transf.position, transf.rotation);
         }
         public static CFrame       GetTransf            (this Transform transform)
         {
@@ -1904,9 +1899,6 @@ namespace sxg
         {
             return -plane.normal * plane.distance;
         }
-
-
-        ////////////////////////// RECTTRANSFORM ////////////////////////////////
         public static Rect         GetWorldRect         (this RectTransform rt)
         {
             Vector3[] corners = new Vector3[4];
@@ -1916,7 +1908,7 @@ namespace sxg
             float maxX = Mathf.Max(corners[0].x, corners[1].x, corners[2].x, corners[3].x);
             float minY = Mathf.Min(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
             float maxY = Mathf.Max(corners[0].y, corners[1].y, corners[2].y, corners[3].y);
-            Vector2 size = new Vector2(maxX - minX, maxY - minY);
+            Vector2 size = new(maxX - minX, maxY - minY);
             return new Rect(center - size / 2f, size);
         }
 
@@ -1935,6 +1927,7 @@ namespace sxg
             rb.AddForce(acceleration, ForceMode.Acceleration);
         }
 
+        [Obsolete("Method is deprecated", true)]
         public static void         AddAccelerationMaxVelocity_DEPRECATED(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
         {
             float speedDelta = maxVelocity - rb.velocity.magnitude;
@@ -1948,6 +1941,7 @@ namespace sxg
                 rb.AddForce(acceleration, ForceMode.Acceleration);
             }
         }
+        [Obsolete("Method is deprecated", true)]
         public static void         Brake_DEPRECATED     (this Rigidbody rb, float breakAcc)
         {
             if (rb.velocity.magnitude > eps)
@@ -1984,7 +1978,6 @@ namespace sxg
         public static float        ConvertToForce       (float value, ForceMode mode, float mass, float dt)
             => ConvertToForce(new Vector3(value, 0f, 0f), mode, mass, dt).x;
 
-
         // from https://discussions.unity.com/t/force-to-velocity-scaling/120739/3
         public static float GetFinalVelocity(float aVelocityChange, float aDrag)
         {
@@ -2002,6 +1995,7 @@ namespace sxg
         {
             return GetDrag(aAcceleration * Time.fixedDeltaTime, aFinalVelocity);
         }
+
 
         ////////////////////////// RIGIDBODY 2D ////////////////////////////////
         public static void         AddForce             (this Rigidbody2D rb, Vector2 force, ForceMode mode = ForceMode.Force)
@@ -2038,12 +2032,14 @@ namespace sxg
             rb.angularVelocity = other.angularVelocity;
         }
 
-        public static void         AddTorqueToReachRotation_DEPRECATED(this Rigidbody2D rb, float targetRotation, float maxTorque)
+        [Obsolete("Method is deprecated", true)]
+        public static void AddTorqueToReachRotation_DEPRECATED(this Rigidbody2D rb, float targetRotation, float maxTorque)
         {
             float deltaAngle = Mathf.DeltaAngle(rb.rotation, targetRotation); // todo: ensure in [-180, 180
             float torque = Math.Clamp(deltaAngle, -maxTorque, maxTorque);
             rb.AddTorque(torque, ForceMode2D.Force);
         }
+        [Obsolete("Method is deprecated", true)]
         public static (float, float) ComputeAccelerationAndDragToObtainMaxVelocityInTime_DEPRECATED(float velocityMax, float timeToVelocityMax)
         {
             float v = velocityMax;
@@ -2090,7 +2086,7 @@ namespace sxg
                 return string.Format("{0:D1}:{1:D2}", ts.Minutes, ts.Seconds);
             }
         }
-        public static string       FormatTimestamp      (this DateTime value, string format = null)
+        public static string       FormatTimestamp      (this DateTime value)
         {
             const string timestampFormat = "yyyy-MM-dd_HH:mm:ss";
             return value.ToString(timestampFormat);
@@ -2256,19 +2252,19 @@ namespace sxg
         public static string       TrimStart            (this string str, string prefix)
         {
             if (str.StartsWith(prefix))
-                return str.Substring(prefix.Length);
+                return str[prefix.Length..];
             return str;
         }
         public static string       TrimEnd              (this string str, string suffix)
         {
             if (str.EndsWith(suffix))
-                return str.Substring(0, str.Length - suffix.Length);
+                return str[..^suffix.Length];
             return str;
         }
 
 
         ////////////////////////// ROUTINE / INVOKE ////////////////////////////////
-        public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f, Action endFunction = null)
+        public static IEnumerator  SimpleRoutine        (Action<float> function, float duration, float delay = 0f, Action endFunction = null, bool realTime = false)
         {
             if (delay > 0f)
                 yield return new WaitForSeconds(delay);
@@ -2277,13 +2273,17 @@ namespace sxg
             function(0f);
             while (percent < 1f)
             {
-                percent += Time.deltaTime * speed;
+                float dt = realTime ? Time.unscaledDeltaTime : Time.deltaTime;
+                percent += dt * speed;
                 function(Mathf.Min(1f, percent));
                 yield return null;
             }
             //function(1f);
-            if (endFunction != null)
-                endFunction();
+            endFunction?.Invoke();
+        }
+        public static IEnumerator  SimpleRoutineRealTime(Action<float> function, float duration, float delay = 0f, Action endFunction = null)
+        {
+            yield return SimpleRoutine(function, duration, delay, endFunction, true);
         }
         public static void         Invoke               (this MonoBehaviour mb, Action action, float delay)
         {
@@ -2294,34 +2294,16 @@ namespace sxg
             else
                 mb.StartCoroutine(PrivateInvokeRoutine(action, delay));
         }
+        [Obsolete("Invoke without mb is disabled. Please call the Invoke on a MonoBehavior", true)]
         public static void         Invoke               (Action action, float delay)
         {
             // TODO: remove
-            Debug.LogWarning("Invoke without mb is disabled. Please call the Invoke on a MonoBehavior");
             //Invoke(CoroutineManager.Instance, action, delay);
         }
         private static IEnumerator PrivateInvokeRoutine (Action action, float delay)
         {
             yield return new WaitForSeconds(delay);
             action();
-        }
-        public static IEnumerator  SimpleRoutineRealTime(Action<float> function, float duration, float delay = 0f, Action endFunction = null)
-        {
-            // copy of SimpleRoutine, uses real time
-            if (delay > 0f)
-                yield return new WaitForSecondsRealtime(delay);
-            float speed = 1f / duration;
-            float percent = 0f;
-            function(0f);
-            while (percent < 1f)
-            {
-                percent += Time.unscaledDeltaTime * speed;
-                function(Mathf.Min(1f, percent));
-                yield return null;
-            }
-            //function(1f);
-            if (endFunction != null)
-                endFunction();
         }
 
 
@@ -2352,9 +2334,8 @@ namespace sxg
             for (int i = 0; i < o.transform.childCount; i++)
             {
                 Transform t = o.transform.GetChild(i);
-                T c = t.GetComponent<T>();
-
-                if (c != null)
+                
+                if (t.TryGetComponent<T>(out var c))
                 {
                     result.Add(c);
                 }
@@ -2445,46 +2426,44 @@ namespace sxg
             if (log)
                 Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
         }
-        public static void ExportMeshAsObj(this Mesh mesh, string fullpath, bool log = true)
+        public static void         ExportMeshAsObj      (this Mesh mesh, string fullpath, bool log = true)
         {
             // NOTICE the x coordinate is flipped because OBJ is right-handed and Unity Left-handed
-            using (StreamWriter sw = new StreamWriter(fullpath))
+            using StreamWriter sw = new(fullpath);
+            sw.WriteLine($"# Exported Mesh {mesh.name}");// at {GetTimestampNow()}");
+            if (mesh.colors.IsNullOrEmpty())
             {
-                sw.WriteLine($"# Exported Mesh {mesh.name}");// at {GetTimestampNow()}");
-                if (mesh.colors.IsNullOrEmpty())
-                {
-                    foreach (Vector3 vertex in mesh.vertices)
-                        sw.WriteLine("v " + -vertex.x + " " + vertex.y + " " + vertex.z);
-                }
-                else
-                {
-                    for (int i = 0; i < mesh.vertexCount; ++i)
-                    {
-                        Vector3 vertex = mesh.vertices[i];
-                        Color color = mesh.colors[i];
-                        sw.WriteLine("v " + -vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
-                    }
-                }
-
-                foreach (Vector3 normal in mesh.normals)
-                    sw.WriteLine("vn " + -normal.x + " " + normal.y + " " + normal.z);
-
-                foreach (Vector2 uv in mesh.uv)
-                    sw.WriteLine("vt " + uv.x + " " + uv.y);
-
-                for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
-                {
-                    int[] triangles = mesh.GetTriangles(submesh);
-                    for (int i = 0; i < triangles.Length; i += 3)
-                    {
-                        // OBJ indices start from 1, so add 1 to each index
-                        sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
-                            triangles[i] + 1, triangles[i + 2] + 1, triangles[i + 1] + 1));
-                    }
-                }
-                if (log)
-                    Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
+                foreach (Vector3 vertex in mesh.vertices)
+                    sw.WriteLine("v " + -vertex.x + " " + vertex.y + " " + vertex.z);
             }
+            else
+            {
+                for (int i = 0; i < mesh.vertexCount; ++i)
+                {
+                    Vector3 vertex = mesh.vertices[i];
+                    Color color = mesh.colors[i];
+                    sw.WriteLine("v " + -vertex.x + " " + vertex.y + " " + vertex.z + " " + color.r + " " + color.g + " " + color.b);
+                }
+            }
+
+            foreach (Vector3 normal in mesh.normals)
+                sw.WriteLine("vn " + -normal.x + " " + normal.y + " " + normal.z);
+
+            foreach (Vector2 uv in mesh.uv)
+                sw.WriteLine("vt " + uv.x + " " + uv.y);
+
+            for (int submesh = 0; submesh < mesh.subMeshCount; submesh++)
+            {
+                int[] triangles = mesh.GetTriangles(submesh);
+                for (int i = 0; i < triangles.Length; i += 3)
+                {
+                    // OBJ indices start from 1, so add 1 to each index
+                    sw.WriteLine(string.Format("f {0}/{0}/{0} {1}/{1}/{1} {2}/{2}/{2}",
+                        triangles[i] + 1, triangles[i + 2] + 1, triangles[i + 1] + 1));
+                }
+            }
+            if (log)
+                Debug.Log($"Mesh '{mesh.name}' with {mesh.vertexCount} vertices was saved as: {fullpath}");
         }
         public static void         SetAlpha             (this Image image, float alpha)
         {
@@ -2540,8 +2519,7 @@ namespace sxg
                 if (i >= parent.childCount)
                 {
                     U newPrefab = GameObject.Instantiate(prefab, parent) as U;
-                    if (init != null)
-                        init(newPrefab);
+                    init?.Invoke(newPrefab);
                 }
                 Transform t = parent.GetChild(i) as Transform;
                 t.gameObject.SetActive(true);
@@ -2570,8 +2548,7 @@ namespace sxg
                     {
                         U prefab = parent.GetChild(0).GetComponentInChildren<U>();
                         U newPrefab = GameObject.Instantiate(prefab, parent) as U;
-                        if (init != null)
-                            init(newPrefab);
+                        init?.Invoke(newPrefab);
                     }
                     Transform t = parent.GetChild(i) as Transform;
                     t.gameObject.SetActive(true);
@@ -2594,7 +2571,7 @@ namespace sxg
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
-        private static string F(float value) => $"{value:0.00000}f";
+        private static string      F(float value) => $"{value:0.00000}f";
         public static string       Prettify(this Vector3 v)
         {
             return $"Vector3({F(v.x)}, {F(v.y)}, {F(v.z)})";
@@ -2603,12 +2580,12 @@ namespace sxg
         {
             return $"Quat({F(q.x)}, {F(q.y)}, {F(q.z)}, {F(q.w)})";
         }
-        public static void SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
+        public static void         SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
         {
             unityEvent.RemoveAllListeners();
             unityEvent.AddListener(call);
         }
-        public static void SetListener(this UnityEvent unityEvent, UnityAction call)
+        public static void         SetListener(this UnityEvent unityEvent, UnityAction call)
         {
             unityEvent.RemoveAllListeners();
             unityEvent.AddListener(call);
@@ -2670,8 +2647,7 @@ namespace sxg
         {
             if (hex.IsNullOrEmpty())
                 return Color.white;
-            if (hex[0] == '#')
-                hex = hex.Substring(1);
+            hex.TrimStart('#');
             uint ans = Convert.ToUInt32(hex, 16);
             return Hex2Color(ans);
         }
@@ -2873,7 +2849,7 @@ namespace sxg
             float fovHorizRad = 2f * Mathf.Atan(Mathf.Tan(angleRad / 2f) * camera.aspect);
             return Mathf.Rad2Deg * fovHorizRad;
         }
-        public static float VerticalFieldOfView(this Camera camera)
+        public static float        VerticalFieldOfView(this Camera camera)
         {
             Debug.Assert(camera != null);
             return camera.fieldOfView;
@@ -2881,10 +2857,7 @@ namespace sxg
 
         public static void         Swap<T>(ref T a, ref T b)
         {
-            T c = a;
-            a = b;
-            b = c;
+            (b, a) = (a, b);
         }
     }
-
 }

@@ -472,14 +472,14 @@ namespace sxg
         public Smoother(T value, float time)
         {
             this.value = value;
-            this.velocity = default(T);
+            this.velocity = default;
             this.time = time;
         }
 
         public void SetValueForced(T target)
         {
             value = target;
-            velocity = default(T);
+            velocity = default;
         }
 
         public T Update(T target)
@@ -518,7 +518,7 @@ namespace sxg
             return null;
         }
 
-        public static System.Random prng = new System.Random();
+        public static System.Random prng = new();
         public static float RandomValue => (float)prng.NextDouble();
         public static float RandomRange(float from, float to) => from + (to-from)*RandomValue;
     }
