@@ -319,7 +319,7 @@ namespace sxg
             }
             else
             {
-                //Debug.LogWarning($"Editor method {methodName} should start with EDITOR_");
+                Debug.LogWarning($"Editor method {methodName} should start with EDITOR_");
             }
             return Utility.AddSpacesBeforeCapitalLetters(methodName);
         }

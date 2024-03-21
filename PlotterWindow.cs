@@ -154,11 +154,11 @@ namespace sxg
             return ans;
         }
 
-        private struct PlotData
+        private readonly struct PlotData
         {
-            private PlotAttribute att;
-            private FieldInfo field;
-            private MonoBehaviour component;
+            private readonly PlotAttribute att;
+            private readonly FieldInfo field;
+            private readonly MonoBehaviour component;
 
             public PlotData(PlotAttribute att, FieldInfo field, MonoBehaviour component)
             {
@@ -207,18 +207,23 @@ namespace sxg
 
         private static Color ColorNameToColor(string name)
         {
-            switch (name)
+            return name switch
             {
-            case "red": return Color.red;
-            case "green": return Color.green;
-            case "blue": return Color.blue;
-            case "magenta": return Color.magenta;
-            case "yellow": return Color.yellow;
-            case "cyan": return Color.cyan;
-            case "white": return Color.white;
-            case "black": return Color.black;
-            }
-            return Color.white;
+                "red"     => Color.red,
+                "green"   => Color.green,
+                "blue"    => Color.blue,
+                "magenta" => Color.magenta,
+                "yellow"  => Color.yellow,
+                "cyan"    => Color.cyan,
+                "white"   => Color.white,
+                "black"   => Color.black,
+
+                "clear"   => Color.clear,
+                "gray"    => Color.gray, // grey
+                "orange"  => new Color(1, 0.5f, 0f),
+                "purple"  => new Color(0.5f, 0, 0.5f),
+                _         => Color.white,
+            };;
         }
     }
 #else

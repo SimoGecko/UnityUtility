@@ -513,7 +513,7 @@ namespace sxg
             return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
         }
 
-#pragma warning disable IDE1006
+#pragma warning disable IDE1006 // Naming rule violation: These words must begin with upper case characters
         public static Vector3      xAxis                => Vector3.right;
         public static Vector3      yAxis                => Vector3.up;
         public static Vector3      zAxis                => Vector3.forward;
