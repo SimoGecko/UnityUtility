@@ -231,30 +231,32 @@ namespace sxg
     }
 
     public class MyEditorWindow : EditorWindow
-    //public class EditorWindow<T> : EditorWindow where T : EditorWindow
+    //public class MyEditorWindow<T> : EditorWindow where T : EditorWindow
     {
         /*
-        [MenuItem("Window/Window Name")]
-        public static void ShowWindow()
-        {
-            EditorWindow.GetWindow(typeof(T));
-        }
+        [MenuItem("Window/Tools/" + nameof(T))]
+        static void ShowWindow() => GetWindow<T>();
         */
 
         private Vector2 scrollPosition = Vector2.zero;
+
+        private IEnumerable<string> FieldNames()
+        {
+            return GetType()
+                .GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Select(field => field.Name);
+        }
 
         protected virtual void OnGUI()
         {
             // scroll isn't working
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUIStyle.none);
 
-            var fieldNames = GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                          .Select(field => field.Name)
-                          .ToArray();
 
             ScriptableObject scriptableObj = this;
             SerializedObject serialObj = new(scriptableObj);
 
+            var fieldNames = FieldNames();
             foreach (string fieldName in fieldNames)
             {
                 SerializedProperty serialProp = serialObj.FindProperty(fieldName);

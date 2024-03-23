@@ -34,6 +34,16 @@ namespace sxg
         }
     }
 
+    public class SingletonTest
+    {
+        void CheckSingletonInstance<T>() where T : MonoBehaviour
+        {
+            bool atMostOne = GameObject.FindObjectsOfType<Singleton<T>>().Length <= 1;
+            if (!atMostOne)
+                Debug.LogWarning($"Invalid number of Managers: {typeof(T).FullName}");
+        }
+    }
+
 #if SNETCODE
     [Obsolete("NetworkedManager<T> is obsolete. Use NetworkedSingleton<T> instead.", false)]
     public class NetworkedManager<T> : NetworkedSingleton<T> where T : NetworkBehaviour { }
