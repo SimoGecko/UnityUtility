@@ -7,10 +7,11 @@ using System.Reflection;
 using UnityEditor;
 using UnityEngine;
 
-////////// PURPOSE: Shows all functions tagged with attribute EditorButton into a collapsable list of containers for easy calling //////////
+////////// PURPOSE: Shows all functions tagged with attribute [EditorButton] into a collapsable list of containers for easy calling //////////
 
 namespace sxg.mgp
 {
+#if SEDITOR
     public class EditorFunctionsEditor : MyEditorWindow
     {
         // -------------------- VARIABLES --------------------
@@ -105,4 +106,5 @@ namespace sxg.mgp
         }
 
     }
+#endif
 }

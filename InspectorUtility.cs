@@ -109,15 +109,9 @@ namespace sxg
         {
         }
 
-    // PURPOSE: Tags a function as something that should only exist in the editor
-    // USAGE:
-    // [EditorFunction] void MyFunc();
-    [System.AttributeUsage(System.AttributeTargets.Method)]
-    public class EditorFunctionAttribute : PropertyAttribute
-    {
-    }
-
-    // PURPOSE: Button to add to a method
+    // PURPOSE: Adds a button in the inspector that allows calling this function.
+    // If the function has parameters those are also shown in the inspector.
+    // Usually these functions only exist while in Editor mode.
     // USAGE:
     // [EditorButton("OptionalName")] void MyFunc();
     [System.AttributeUsage(System.AttributeTargets.Method)]
@@ -550,9 +544,6 @@ namespace sxg
     {
     }
     public class LayoutEndHorizontal : Attribute
-    {
-    }
-    public class EditorFunctionAttribute : Attribute
     {
     }
     public class EditorButtonAttribute : Attribute
