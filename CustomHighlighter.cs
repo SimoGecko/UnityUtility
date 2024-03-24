@@ -48,7 +48,6 @@ namespace sxg.hl
         }
 
 
-
         // icons from https://github.com/halak/unity-editor-icons
         /*
         d_Package Manager

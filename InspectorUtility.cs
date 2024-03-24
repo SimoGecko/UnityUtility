@@ -7,8 +7,6 @@ using System.Reflection;
 using System;
 using System.Linq;
 using UnityEditor;
-using System.Drawing;
-using System.Reflection.Emit;
 #if SNETCODE
 using Unity.Netcode;
 #endif
@@ -33,11 +31,6 @@ namespace sxg
     [CustomPropertyDrawer(typeof(ReadOnlyAttribute))]
     public class ReadOnlyDrawer : PropertyDrawer
     {
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            return EditorGUI.GetPropertyHeight(property, label, true);
-        }
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             GUI.enabled = false;
@@ -49,9 +42,7 @@ namespace sxg
     [AttributeUsage(AttributeTargets.Field, Inherited = true, AllowMultiple = false)]
     public sealed class RangeExAttribute : PropertyAttribute
     {
-        public readonly float min;
-        public readonly float max;
-        public readonly float step;
+        public readonly float min, max, step;
 
         public RangeExAttribute(float min, float max, float step)
         {
@@ -63,8 +54,7 @@ namespace sxg
 
     public class MinMaxSliderAttribute : PropertyAttribute
     {
-        public float min;
-        public float max;
+        public readonly float min, max;
 
         public MinMaxSliderAttribute(float min, float max)
         {
@@ -113,17 +103,11 @@ namespace sxg
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class LayoutBeginHorizontal : PropertyAttribute
     {
-        public LayoutBeginHorizontal()
-        {
-        }
     }
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class LayoutEndHorizontal : PropertyAttribute
-    {
-        public LayoutEndHorizontal()
         {
         }
-    }
 
     // PURPOSE: Tags a function as something that should only exist in the editor
     // USAGE:
@@ -154,6 +138,23 @@ namespace sxg
         public string Label { get; private set; }
         public string Tooltip { get; private set; }
         public int Size { get; private set; }
+
+        internal string GetLabel(MemberInfo memberInfo)
+        {
+            return string.IsNullOrEmpty(Label) ? Prettify(memberInfo.Name) : Label;
+        }
+        private static string Prettify(string methodName)
+        {
+            if (methodName.StartsWith("EDITOR_"))
+            {
+                methodName = methodName.TrimStart("EDITOR_");
+            }
+            else
+            {
+                Debug.LogWarning($"Editor method {methodName} should start with EDITOR_");
+            }
+            return Utility.AddSpacesBeforeCapitalLetters(methodName);
+        }
     }
 
     [System.AttributeUsage(System.AttributeTargets.Class)]
@@ -249,9 +250,7 @@ namespace sxg
 
         protected virtual void OnGUI()
         {
-            // scroll isn't working
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUIStyle.none);
-
 
             ScriptableObject scriptableObj = this;
             SerializedObject serialObj = new(scriptableObj);
@@ -275,6 +274,8 @@ namespace sxg
 
     static class ButtonDrawerHelper
     {
+        static Dictionary<string, object> data = new(); // TODO: this gets reset every time. Find a way to store and serialize this to preserve
+
         public static void DrawButtonsForType(Type type, object obj)
         {
             //var methods = typeof(MonoBehaviour) // base
@@ -286,7 +287,6 @@ namespace sxg
             foreach (var memberInfo in members)
             {
                 EditorButtonAttribute attribute = memberInfo.GetCustomAttribute<EditorButtonAttribute>();
-                string label = string.IsNullOrEmpty(attribute.Label) ? Prettify(memberInfo.Name) : attribute.Label;
 
                 if (memberInfo.GetCustomAttribute<LayoutBeginHorizontal>() != null)
                 {
@@ -298,11 +298,8 @@ namespace sxg
                     GUILayout.BeginHorizontal();
                     buttonsLeft = attribute.Size;
                 }
-                if (GUILayout.Button(new GUIContent(label, attribute.Tooltip)))
-                {
-                    var method = memberInfo as MethodInfo;
-                    method.Invoke(obj, null);
-                }
+
+                ShowAndRunMethod(obj, memberInfo, attribute);
                 --buttonsLeft;
 
                 if (memberInfo.GetCustomAttribute<LayoutEndHorizontal>() != null || buttonsLeft == 0)
@@ -312,18 +309,72 @@ namespace sxg
             }
         }
 
-        public static string Prettify(string methodName)
+        public static void ShowAndRunMethod(object obj, MemberInfo memberInfo, EditorButtonAttribute attribute)
         {
-            // Check that is starts with EDITOR_
-            if (methodName.StartsWith("EDITOR_"))
+            GUILayout.BeginHorizontal();
+
+            string label = attribute.GetLabel(memberInfo);
+            string tooltip = attribute.Tooltip;
+
+            float buttonWidth = EditorGUIUtility.labelWidth;
+
+            EditorGUIUtility.labelWidth = 80f;
+            bool runFunc = GUILayout.Button(new GUIContent(label, tooltip), GUILayout.Width(buttonWidth)); // style
+
+            var methodInfo = memberInfo as MethodInfo;
+            List<object> args = new();
+            foreach (ParameterInfo parameter in methodInfo.GetParameters())
             {
-                methodName = methodName.TrimStart("EDITOR_");
+                string key = $"{methodInfo.DeclaringType.Name}::{methodInfo.Name}.{parameter.Name}";
+
+                data.TryGetValue(key, out object value);
+
+                if (parameter.ParameterType == typeof(int))
+                {
+                    value ??= 0;
+                    value = EditorGUILayout.IntField(parameter.Name, (int)(value));
             }
-            else
+                else if (parameter.ParameterType == typeof(float))
             {
-                Debug.LogWarning($"Editor method {methodName} should start with EDITOR_");
+                    value ??= 0f;
+                    value = EditorGUILayout.FloatField(parameter.Name, (float)value);
+                }
+                else if (parameter.ParameterType == typeof(string))
+                {
+                    value ??= "";
+                    value = EditorGUILayout.TextField(parameter.Name, (string)value);
+                }
+                else if (parameter.ParameterType == typeof(Vector2))
+                {
+                    value ??= Vector2.zero;
+                    value = EditorGUILayout.Vector2Field(parameter.Name, (Vector2)value);
+                }
+                else if (parameter.ParameterType == typeof(Vector3))
+                {
+                    value ??= Vector3.zero;
+                    value = EditorGUILayout.Vector3Field(parameter.Name, (Vector3)value);
+                }
+                else if (parameter.ParameterType.IsEnum)
+                {
+                    value ??= Enum.ToObject(parameter.ParameterType, 0);
+                    value = EditorGUILayout.EnumPopup(parameter.Name, (Enum)value);
+                }
+                else if (typeof(UnityEngine.Object).IsAssignableFrom(parameter.ParameterType))
+                {
+                    value ??= null;
+                    value = EditorGUILayout.ObjectField(parameter.Name, (UnityEngine.Object)value, parameter.ParameterType, true);
+                }
+
+                args.Add(value);
+                data[key] = value;
             }
-            return Utility.AddSpacesBeforeCapitalLetters(methodName);
+            GUILayout.EndHorizontal();
+            EditorGUIUtility.labelWidth = buttonWidth;
+
+            if (runFunc)
+            {
+                methodInfo.Invoke(obj, args.ToArray());
+            }
         }
     }
 

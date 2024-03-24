@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
 using System.Reflection;
+using UnityEngine;
 
 ////////// PURPOSE: Various reflection utility functions //////////
 
@@ -12,22 +13,18 @@ namespace sxg
 {
     public static class ReflectionUtility
     {
-        public static MethodInfo[] GetMethodsWithAttribute(System.Type attributeType, bool allowInstance = false, bool allowPrivate = true)
+        public static IEnumerable<MethodInfo> GetMethodsWithAttribute(System.Type attributeType, BindingFlags flags = BindingFlags.Default)
         {
-            MethodInfo[] methods = null;
-
             Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
             foreach (Assembly assembly in assemblies)
             {
                 if (assembly.ManifestModule.Name == "Assembly-CSharp.dll") // the assembly containing monobehaviors
                 {
-                    BindingFlags flags = BindingFlags.Static | BindingFlags.Public;
-                    if (allowInstance) flags |= BindingFlags.Instance;
-                    if (allowPrivate) flags |= BindingFlags.NonPublic;
-                    methods = assembly.GetTypes()
+                    if (flags == BindingFlags.Default)
+                        flags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+                    var methods = assembly.GetTypes()
                             .SelectMany(t => t.GetMethods(flags))
-                            .Where(m => m.GetCustomAttributes(attributeType, false).Length > 0)
-                            .ToArray();
+                            .Where(m => m.GetCustomAttributes(attributeType, false).Length > 0);
                     return methods;
                 }
             }
@@ -37,18 +34,28 @@ namespace sxg
         public static MethodInfo GetStaticMethodWithAttributeNamed(System.Type attributeType, string functionName)
         {
             // TODO: cache the methods
-            MethodInfo[] methods = GetMethodsWithAttribute(attributeType, false, true);
-            if (methods != null)
+            var methods = GetMethodsWithAttribute(attributeType, BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+            return methods?.Find(m => m.Name == functionName);
+        }
+
+        public static void FindFieldContaining(string str)
+        {
+            Assembly[] assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            foreach (Assembly assembly in assemblies)
             {
-                foreach (MethodInfo method in methods)
+                if (assembly.ManifestModule.Name == "Assembly-CSharp.dll") // the assembly containing monobehaviors
                 {
-                    if (method.Name == functionName)
+                    BindingFlags flags = BindingFlags.Static | BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+                    var fields = assembly.GetTypes()
+                            .SelectMany(t => t.GetFields(flags))
+                            .Where(f => f.Name.Contains(str));
+                    foreach (var field in fields)
                     {
-                        return method;
+                        Debug.Log($"{field.Name} ({field.DeclaringType.Name})");
                     }
+                    //return fields.Select(field => $"{field.Name} ({field.DeclaringType.Name})");
                 }
             }
-            return null;
         }
     }
 }
