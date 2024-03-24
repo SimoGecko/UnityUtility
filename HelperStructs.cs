@@ -27,7 +27,7 @@ namespace sxg
 
 
     ////////////////////////// TRANSF ////////////////////////////////
-    
+
     // add this on top of classes that fail compiling due to the rename:
     // using Transf = sxg.CFrame;
     [System.Serializable]

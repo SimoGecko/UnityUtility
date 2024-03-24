@@ -1757,7 +1757,7 @@ namespace sxg
             return transform.rotation * vector;
             //return transform.TransformDirection(vector); // isn't this the same?
         }
-        
+
         public static Quaternion   ToLocal              (this Transform transform, Quaternion q)
         {
             if (!transform)
@@ -2334,7 +2334,7 @@ namespace sxg
             for (int i = 0; i < o.transform.childCount; i++)
             {
                 Transform t = o.transform.GetChild(i);
-                
+
                 if (t.TryGetComponent<T>(out var c))
                 {
                     result.Add(c);
@@ -2506,7 +2506,7 @@ namespace sxg
             }
             return path;
         }
-        
+
         public static void SyncChildrenInstantiate<T, U>(this Transform parent, IEnumerable<T> list, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
         {
             SyncChildrenInstantiate(list, parent, prefab, action, init);

@@ -51,7 +51,7 @@ namespace sxg.hl
 
         // icons from https://github.com/halak/unity-editor-icons
         /*
-        d_Package Manager	
+        d_Package Manager
         GameManager Icon
         CustomTool
 
@@ -64,12 +64,12 @@ namespace sxg.hl
         d_Camera Icon
         d_Light Icon
 
-        Canvas Icon	
-            d_Button Icon	
-            d_Image Icon	
-            d_InputField Icon	
-            d_Toggle Icon	
-            d_Text Icon	
+        Canvas Icon
+            d_Button Icon
+            d_Image Icon
+            d_InputField Icon
+            d_Toggle Icon
+            d_Text Icon
 
          */
 

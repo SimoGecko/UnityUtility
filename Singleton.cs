@@ -61,7 +61,7 @@ namespace sxg
                 return instance;
             }
         }
-    
+
         public override void OnDestroy()
         {
             base.OnDestroy();
