@@ -17,6 +17,7 @@ namespace sxg.mgp
         // -------------------- VARIABLES --------------------
 
         // public
+        string searchQuery;
 
 
         // private
@@ -43,19 +44,48 @@ namespace sxg.mgp
                 containers = BuildContainersAndFunctions();
 
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos);
-            foreach (var container in containers)
+
+            searchQuery = EditorGUILayout.TextField("Search:", searchQuery);
+            if (string.IsNullOrEmpty(searchQuery))
             {
-                container.visible = EditorGUILayout.Foldout(container.visible, container.name);
-                if (container.visible)
+                foreach (var container in containers)
                 {
-                    EditorGUI.indentLevel++;
-                    foreach (var function in container.functions)
+                    container.visible = EditorGUILayout.Foldout(container.visible, container.name);
+                    if (container.visible)
                     {
-                        ButtonDrawerHelper.ShowAndRunMethod(container.obj, function.mi, (EditorButtonAttribute)function.attribute);
+                        EditorGUI.indentLevel++;
+                        foreach (var function in container.functions)
+                            ButtonDrawerHelper.ShowAndRunMethod(container.obj, function.mi, (EditorButtonAttribute)function.attribute, true);
+                        EditorGUI.indentLevel--;
                     }
-                    EditorGUI.indentLevel--;
                 }
             }
+            else
+            {
+                foreach (var container in containers)
+                {
+                    bool containerMatch = container.name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase);
+                    bool functionsMatch = container.functions.Any(f => f.name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
+                    if (containerMatch || functionsMatch)
+                    {
+                        EditorGUILayout.Foldout(true, container.name);
+                        EditorGUI.indentLevel++;
+                        if (containerMatch)
+                        {
+                            foreach (var function in container.functions)
+                                ButtonDrawerHelper.ShowAndRunMethod(container.obj, function.mi, (EditorButtonAttribute)function.attribute, true);
+                        }
+                        else
+                        {
+                            // only draw those that matched
+                            foreach (var function in container.functions.Where(f => f.name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)))
+                                ButtonDrawerHelper.ShowAndRunMethod(container.obj, function.mi, (EditorButtonAttribute)function.attribute, true);
+                        }
+                        EditorGUI.indentLevel--;
+                    }
+                }
+            }
+
             EditorGUILayout.EndScrollView();
         }
 

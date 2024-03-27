@@ -278,6 +278,7 @@ namespace sxg
                 .Where(o => Attribute.IsDefined(o, typeof(EditorButtonAttribute)));
 
             int buttonsLeft = -1;
+            bool inHorizontalMode = false;
             foreach (var memberInfo in members)
             {
                 EditorButtonAttribute attribute = memberInfo.GetCustomAttribute<EditorButtonAttribute>();
@@ -285,6 +286,7 @@ namespace sxg
                 if (memberInfo.GetCustomAttribute<LayoutBeginHorizontal>() != null)
                 {
                     GUILayout.BeginHorizontal();
+                    inHorizontalMode = true;
                 }
 
                 if (attribute.Size != 0)
@@ -293,17 +295,18 @@ namespace sxg
                     buttonsLeft = attribute.Size;
                 }
 
-                ShowAndRunMethod(obj, memberInfo, attribute);
+                ShowAndRunMethod(obj, memberInfo, attribute, setWidth: !inHorizontalMode);
                 --buttonsLeft;
 
                 if (memberInfo.GetCustomAttribute<LayoutEndHorizontal>() != null || buttonsLeft == 0)
                 {
                     GUILayout.EndHorizontal();
+                    inHorizontalMode = false;
                 }
             }
         }
 
-        public static void ShowAndRunMethod(object obj, MemberInfo memberInfo, EditorButtonAttribute attribute)
+        public static void ShowAndRunMethod(object obj, MemberInfo memberInfo, EditorButtonAttribute attribute, bool alignLeft = false, bool setWidth = true)
         {
             GUILayout.BeginHorizontal();
 
@@ -312,8 +315,14 @@ namespace sxg
 
             float buttonWidth = EditorGUIUtility.labelWidth;
 
+            GUIStyle buttonStyle = new(GUI.skin.button);
+            if (setWidth)
+                buttonStyle.fixedWidth = buttonWidth;
+            if (alignLeft)
+                buttonStyle.alignment = TextAnchor.MiddleLeft;
+
             EditorGUIUtility.labelWidth = 80f;
-            bool runFunc = GUILayout.Button(new GUIContent(label, tooltip), GUILayout.Width(buttonWidth)); // style
+            bool runFunc = GUILayout.Button(new GUIContent(label, tooltip), buttonStyle);
 
             var methodInfo = memberInfo as MethodInfo;
             List<object> args = new();
