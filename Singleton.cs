@@ -1,7 +1,6 @@
 // (c) Simone Guggiari 2020-2024
 
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 #if SNETCODE
 using Unity.Netcode;

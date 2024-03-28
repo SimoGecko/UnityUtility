@@ -1,6 +1,5 @@
 // (c) Simone Guggiari 2022-2024
 
-using System.Collections.Generic;
 using UnityEngine;
 #if SNETCODE
 using Unity.Netcode;
@@ -77,7 +76,7 @@ namespace sxg
         }
 #endif
 
-        public static CFrame operator*(CFrame a, CFrame b)
+        public static CFrame operator *(CFrame a, CFrame b)
         {
             return new CFrame(a.position + (a.rotation * b.position), a.rotation * b.rotation);
         }
@@ -219,7 +218,7 @@ namespace sxg
 
     ////////////////////////// RANDOMIZED ////////////////////////////////
     [System.Serializable]
-    public struct Randomized<T> 
+    public struct Randomized<T>
     {
         [SerializeField] private T average;
         [SerializeField] private float variance;
@@ -520,7 +519,7 @@ namespace sxg
 
         public static System.Random prng = new();
         public static float RandomValue => (float)prng.NextDouble();
-        public static float RandomRange(float from, float to) => from + (to-from)*RandomValue;
+        public static float RandomRange(float from, float to) => from + (to - from) * RandomValue;
     }
 
     public class SmoothFunctionalityFloat : IGenericHelper<float>

@@ -1,9 +1,9 @@
 // (c) Simone Guggiari 2020-2024
 
 using System.Collections.Generic;
-using UnityEngine;
-using UnityEditor;
 using System.Linq;
+using UnityEditor;
+using UnityEngine;
 
 ////////// PURPOSE: Various Gizmos utility functions //////////
 
@@ -114,7 +114,7 @@ namespace sxg
             float zoomFactor = 1f;
 #endif
             float maxzoom = minzoom * 3f;
-            float a = Mathf.Clamp01(1f-Mathf.InverseLerp(minzoom, maxzoom, zoomFactor));
+            float a = Mathf.Clamp01(1f - Mathf.InverseLerp(minzoom, maxzoom, zoomFactor));
             if (a <= 0)
                 return;
             Color c = Gizmos.color;
@@ -223,7 +223,7 @@ namespace sxg
             Vector3 to = position + forward * height;
 
             float step = 360f / sides;
-            float stepOffset = step/2;
+            float stepOffset = step / 2;
 
             Vector3[] point = new Vector3[2];
             Vector2 dir = Utility.DirectionFromAngle(stepOffset) * baseRadius;
@@ -326,7 +326,7 @@ namespace sxg
             if (invert)
                 Utility.Swap(ref from, ref to);
             Gizmos.DrawLine(from, to);
-            Vector2 dir = (to-from).normalized *size;
+            Vector2 dir = (to - from).normalized * size;
             Gizmos.DrawLine(to, to - Quaternion.Euler(0, 0, 20) * dir);
             Gizmos.DrawLine(to, to - Quaternion.Euler(0, 0, -20) * dir);
         }

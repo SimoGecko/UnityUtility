@@ -1,12 +1,11 @@
 ﻿// (c) Simone Guggiari 2020-2024
 
-using System.Collections.Generic;
-
-using UnityEngine;
-using System.Reflection;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using UnityEditor;
+using UnityEngine;
 #if SNETCODE
 using Unity.Netcode;
 #endif
@@ -87,7 +86,7 @@ namespace sxg
     [System.AttributeUsage(System.AttributeTargets.Field)]
     public class Foldout : PropertyAttribute
     {
-        public Foldout(string label ="", int size = 1)
+        public Foldout(string label = "", int size = 1)
         {
             this.Label = label;
             this.Size = size;
@@ -106,8 +105,8 @@ namespace sxg
     }
     [System.AttributeUsage(System.AttributeTargets.Method)]
     public class LayoutEndHorizontal : PropertyAttribute
-        {
-        }
+    {
+    }
 
     // PURPOSE: Adds a button in the inspector that allows calling this function.
     // If the function has parameters those are also shown in the inspector.
@@ -199,7 +198,7 @@ namespace sxg
                 Type type = types[tabIndex];
 
                 var members = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-                foreach(var member in members)
+                foreach (var member in members)
                 {
                     var property = (serializedObject).FindProperty(member.Name);
                     if (property != null)
@@ -336,9 +335,9 @@ namespace sxg
                 {
                     value ??= 0;
                     value = EditorGUILayout.IntField(parameter.Name, (int)(value));
-            }
+                }
                 else if (parameter.ParameterType == typeof(float))
-            {
+                {
                     value ??= 0f;
                     value = EditorGUILayout.FloatField(parameter.Name, (float)value);
                 }

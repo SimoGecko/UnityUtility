@@ -1,12 +1,8 @@
 ﻿// (c) Simone Guggiari 2020-2024
 
-using System;
 using System.Collections.Generic;
-using System.Collections;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.UI;
-using System.Text;
 
 ////////// PURPOSE: Path class //////////
 
@@ -59,7 +55,7 @@ namespace sxg
             {
                 length += Vector2.Distance(points.Get(-2), points.Get(-1));
             }
-            if(points.Count == 1)
+            if (points.Count == 1)
             {
                 bounds = new Rect(point, Vector2.zero);
             }
@@ -145,7 +141,7 @@ namespace sxg
         {
             float minSqrDist = float.MaxValue;
             Debug.Assert(points.Count >= 2, "Calling distance to a path that doesn't contain segments");
-            for (int i = 0; i < points.Count-1-numLastSegmentsIgnored; i++)
+            for (int i = 0; i < points.Count - 1 - numLastSegmentsIgnored; i++)
             {
                 Segment s = new(points[i], points[i + 1]);
                 minSqrDist = Mathf.Min(minSqrDist, s.DistanceToPointSquared(point));
@@ -186,7 +182,7 @@ namespace sxg
             {
                 // draw line
                 Gizmos.color = Color.black;
-                for (int i = 0; i < points.Count-1; i++)
+                for (int i = 0; i < points.Count - 1; i++)
                 {
                     Gizmos.DrawLine(points[i], points[i + 1]);
                 }

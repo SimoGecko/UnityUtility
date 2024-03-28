@@ -1,8 +1,7 @@
 // (c) Simone Guggiari 2020-2024
 
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 ////////// PURPOSE:  //////////
 
@@ -55,7 +54,7 @@ namespace sxg
         {
             // Find the SerializedProperties by name
             var min = property.FindPropertyRelative("min"); // nameof(min)
-            var max = property.FindPropertyRelative("max"); 
+            var max = property.FindPropertyRelative("max");
 
             // Using BeginProperty / EndProperty on the parent property means that
             // prefab override logic works on the entire property.

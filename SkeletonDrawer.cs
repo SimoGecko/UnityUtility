@@ -1,6 +1,5 @@
 // (c) Simone Guggiari 2024
 
-using System.Collections.Generic;
 using UnityEngine;
 
 ////////// PURPOSE: Draws a skeleton's bones //////////

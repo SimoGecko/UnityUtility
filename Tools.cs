@@ -1,12 +1,9 @@
 ﻿// (c) Simone Guggiari 2020-2024
 
 using System.Collections.Generic;
-using System.Collections;
 using System.Text;
-using System.Linq;
-using UnityEngine;
 using UnityEditor;
-using System.IO;
+using UnityEngine;
 #if SNETCODE
 using Unity.Netcode;
 #endif
@@ -65,7 +62,7 @@ namespace sxg
         [MenuItem("Tools/Sort Children/Name")]
         public static void SortChildren()
         {
-            foreach(GameObject go in Selection.gameObjects)
+            foreach (GameObject go in Selection.gameObjects)
             {
                 Utility.SortChildren(go.transform);
             }
@@ -239,7 +236,8 @@ namespace sxg
             Debug.Log($"Distance={dist}");
         }
 
-        [MenuItem("Assets/Create/Shader/Custom Shader Mine", false, 100)] static void CreateCustomShader(MenuCommand menuCommand)
+        [MenuItem("Assets/Create/Shader/Custom Shader Mine", false, 100)]
+        static void CreateCustomShader(MenuCommand menuCommand)
         {
             string editorpath = "c:/Program Files/Unity/Hub/Editor/2022.3.12f1/"; // TODO: find indirection
             string path = "Editor/Data/Resources/ScriptTemplates/";

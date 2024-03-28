@@ -1,17 +1,17 @@
 ﻿// (c) Simone Guggiari 2020-2024
 
 using System;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
 using System.Text;
 using System.Text.RegularExpressions;
+using TMPro;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.Events;
-using System.IO;
+using UnityEngine.UI;
 
 ////////// PURPOSE: Various Utility functions //////////
 
@@ -83,7 +83,7 @@ namespace sxg
         }
         public static bool         IsClose              (this float value, float value2)
         {
-            return Mathf.Abs(value-value2) <= eps;
+            return Mathf.Abs(value - value2) <= eps;
         }
         public static float        SumProduct           (float[] a, float[] b)
         {
@@ -153,8 +153,8 @@ namespace sxg
         public static float        ClampAngle           (float angle, float min, float max)
         {
             // from https://stackoverflow.com/questions/42246870/clamp-angle-to-arbitrary-range
-            float n_min = Canonicalize(min-angle);
-            float n_max = Canonicalize(max-angle);
+            float n_min = Canonicalize(min - angle);
+            float n_max = Canonicalize(max - angle);
 
             if (n_min <= 0f && n_max >= 0f)
             {
@@ -210,7 +210,7 @@ namespace sxg
 
         public static float        Clean                (float value, float amount, float eps)
         {
-            float closest = Mathf.Round(value/amount) * amount;
+            float closest = Mathf.Round(value / amount) * amount;
             if (Mathf.Abs(closest - value) <= eps) return closest;
             return value;
         }
@@ -532,7 +532,7 @@ namespace sxg
             Vector3 swing = q * Vector3.forward;
             Quaternion swingRot = Quaternion.FromToRotation(Vector3.forward, swing);
             //Quaternion twistRot = q * Quaternion.Inverse(swingRot);
-            float twist = Vector3.SignedAngle(swingRot*Vector3.up, q*Vector3.up, swing);
+            float twist = Vector3.SignedAngle(swingRot * Vector3.up, q * Vector3.up, swing);
             return twist;
         }
         public static Quaternion   FlipX                (this Quaternion q)
@@ -615,7 +615,7 @@ namespace sxg
         public static Quaternion   FromDirection2D      (this Vector2 direction)
         {
             float angle = Mathf.Atan2(direction.y, direction.x);
-            return Quaternion.Euler(-angle*Mathf.Rad2Deg, 90f, 0f);
+            return Quaternion.Euler(-angle * Mathf.Rad2Deg, 90f, 0f);
         }
         public static Quaternion   FromAngle2D          (this float angle)
         {
@@ -722,7 +722,7 @@ namespace sxg
         public static int          GetRandom            (this Vector2Int v)
         {
             Debug.Assert(v.x <= v.y, $"Vector used for randomization should have x<y, {v}");
-            return UnityEngine.Random.Range(v.x, v.y+1);
+            return UnityEngine.Random.Range(v.x, v.y + 1);
         }
         public static Vector2      RandomInside         (this Rect rect)
         {
@@ -768,7 +768,7 @@ namespace sxg
             Debug.Assert(randValue >= 0f && randValue <= 1f);
             float sum = a.Sum();
             if (sum == 0f)
-                return Mathf.Min(Mathf.FloorToInt(randValue * a.Length), a.Length-1);
+                return Mathf.Min(Mathf.FloorToInt(randValue * a.Length), a.Length - 1);
             float r = randValue * sum;
             for (int i = 0; i < a.Length; i++)
             {
@@ -1128,7 +1128,7 @@ namespace sxg
                 return;
             for (int i = 0; i < list.Count; ++i)
             {
-                for (int j = i+1; j < list.Count; ++j)
+                for (int j = i + 1; j < list.Count; ++j)
                 {
                     action(list[i], list[j]);
                 }
@@ -1576,7 +1576,7 @@ namespace sxg
                 yield return transform.GetChild(i);
             }
         }
-        public static IEnumerable<T> GetChildrenOfType<T>(this Transform transform, bool includeSelf = false) where T: Component
+        public static IEnumerable<T> GetChildrenOfType<T>(this Transform transform, bool includeSelf = false) where T : Component
         {
             return transform.GetChildren(includeSelf).Select(t => t.GetComponent<T>()).Where(c => c != null);
         }
@@ -1795,7 +1795,7 @@ namespace sxg
                 transform = transform.parent;
                 ++ans;
             }
-            return ans-1;
+            return ans - 1;
         }
         public static void         SplayChildren        (this Transform transform, float splayAmount, int splayRow = -1)
         {
@@ -1934,7 +1934,7 @@ namespace sxg
             if (speedDelta > 0f)
             {
                 float maxAccForVel = speedDelta / Time.deltaTime;
-                if (acceleration.sqrMagnitude > maxAccForVel*maxAccForVel)
+                if (acceleration.sqrMagnitude > maxAccForVel * maxAccForVel)
                 {
                     acceleration = acceleration.normalized * maxAccForVel;
                 }
@@ -2757,7 +2757,7 @@ namespace sxg
                 //Vector2 offset = new Vector2(seed, seed ^ 0xC9EFB81);
                 //seed = nextRand(seed);
                 Vector2 p = (point) / scale * m + offset;
-                ans += (Mathf.PerlinNoise(p.x, p.y)*2f-1f) / m;
+                ans += (Mathf.PerlinNoise(p.x, p.y) * 2f - 1f) / m;
                 m *= 2;
             }
             return ans;

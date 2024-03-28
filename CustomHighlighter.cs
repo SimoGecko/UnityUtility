@@ -1,6 +1,5 @@
 // (c) Simone Guggiari 2023
 
-using System;
 using UnityEditor;
 using UnityEngine;
 

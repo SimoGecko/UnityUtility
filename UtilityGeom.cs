@@ -1,6 +1,5 @@
 ﻿// (c) Simone Guggiari 2020-2024
 
-using System.Collections.Generic;
 using UnityEngine;
 
 ////////// PURPOSE: Various Geometric objects and functions //////////
@@ -20,7 +19,7 @@ namespace sxg
             this.c = c;
         }
 
-        public float Area  => Utility.GetTriangleArea  (a, b, c);
+        public float Area => Utility.GetTriangleArea(a, b, c);
         public Vector2 Com => Utility.GetTriangleCenter(a, b, c);
     }
 
@@ -132,7 +131,7 @@ namespace sxg
         //Quaternion rot;
 
         public Capsule(Vector3 center, float radius, float height)
-            :this(center, radius, height, Quaternion.identity) { }
+            : this(center, radius, height, Quaternion.identity) { }
         public Capsule(Vector3 center, float radius, float height, Quaternion rot)
         {
             this.center = center;
