@@ -1,6 +1,7 @@
 ﻿// (c) Simone Guggiari 2020-2024
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
@@ -243,6 +244,29 @@ namespace sxg
             string path = "Editor/Data/Resources/ScriptTemplates/";
             string file = "80-Shader__Custom Shader-NewCustomShader.shader.txt";
             ProjectWindowUtil.CreateScriptAssetFromTemplateFile($"{editorpath}/{path}/{file}", "NewCustomShader.shader");
+        }
+
+        [MenuItem("Tools/Reserialize all Prefabs")]
+        private static void ReserializeAllPrefabs()
+        {
+            // from https://www.reddit.com/r/Unity3D/comments/aabf4u/how_can_you_reserialize_all_prefabs_in_unity_2018x/
+            var prefabPaths = AssetDatabase.GetAllAssetPaths().Where(path => path.Contains(".prefab"));
+            foreach (string prefabPath in prefabPaths)
+            {
+                GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (!PrefabUtility.IsPartOfImmutablePrefab(prefabAsset))
+                {
+                    PrefabUtility.SavePrefabAsset(prefabAsset);
+                }
+            }
+        }
+
+        [MenuItem("Tools/Reserialize all ScriptableObjects")]
+        private static void ReserializeAllItemAssets()
+        {
+            var scriptableObjectsPaths = AssetDatabase.GetAllAssetPaths().Where(path => path.Contains(".asset"));
+            //.Where(path => AssetDatabase.LoadAssetAtPath<T>(path) != null);
+            AssetDatabase.ForceReserializeAssets(scriptableObjectsPaths);
         }
 
 #if SNETCODE
