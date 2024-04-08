@@ -2568,6 +2568,10 @@ namespace sxg
                 return GameObject.Find(name);
             return GameObject.FindObjectsOfType<GameObject>(true).Where(go => go.name == name).FirstOrDefault();
         }
+        public static bool         HasComponent<T>      (this GameObject go) where T : Component
+        {
+            return go.GetComponent<T>() != null;
+        }
 
 
         ////////////////////////// SERIALIZATION ////////////////////////////////
