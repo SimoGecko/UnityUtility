@@ -89,15 +89,21 @@ namespace sxg.hl
 
         private static CustomHighlighterSo GetOrCreateSo()
         {
-            const string path = "Assets/Editor/CustomHighlighterData.asset";
-            if (!AssetDatabase.IsValidFolder("Assets/Editor"))
-                AssetDatabase.CreateFolder("Assets", "Editor");
+            const string path = "Assets/Editor/Data/CustomHighlighterData.asset";
+            if (!AssetDatabase.IsValidFolder("Assets/Editor/Data"))
+                AssetDatabase.CreateFolder("Assets/Editor", "Data");
             var so = AssetDatabase.LoadAssetAtPath<CustomHighlighterSo>(path);
             if (so == null)
             {
                 so = ScriptableObject.CreateInstance<CustomHighlighterSo>();
                 AssetDatabase.CreateAsset(so, path);
             }
+            return so;
+        }
+        private static CustomHighlighterSo GetSo()
+        {
+            const string path = "Assets/Editor/Data/CustomHighlighterData.asset";
+            var so = AssetDatabase.LoadAssetAtPath<CustomHighlighterSo>(path);
             return so;
         }
 
@@ -109,7 +115,7 @@ namespace sxg.hl
 
         private static Rule FindRule(System.Predicate<Rule> predicate)
         {
-            CustomHighlighterSo so = GetOrCreateSo();
+            CustomHighlighterSo so = GetSo();
             if (so != null && so.rules != null)
             {
                 var rule = so.rules.Find(predicate);
