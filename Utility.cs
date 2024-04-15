@@ -1862,19 +1862,19 @@ namespace sxg
                 return t.GetComponent<T>();
             return default;
         }
-        public static void         Set                  (this Transform transform, CFrame transf)
+        public static void         Set                  (this Transform transform, CFrame cframe)
         {
-            transform.SetPositionAndRotation(transf.position, transf.rotation);
+            transform.SetPositionAndRotation(cframe.position, cframe.rotation);
         }
-        public static void         SetLocal             (this Transform transform, CFrame transf)
+        public static void         SetLocal             (this Transform transform, CFrame cframe)
         {
-            transform.SetLocalPositionAndRotation(transf.position, transf.rotation);
+            transform.SetLocalPositionAndRotation(cframe.position, cframe.rotation);
         }
-        public static CFrame       GetTransf            (this Transform transform)
+        public static CFrame       GetCFrame            (this Transform transform)
         {
             return new(transform.position, transform.rotation);
         }
-        public static CFrame       GetTransfLocal       (this Transform transform)
+        public static CFrame       GetCFrameLocal       (this Transform transform)
         {
             return new(transform.localPosition, transform.localRotation);
         }
@@ -1891,6 +1891,15 @@ namespace sxg
             return transform.localPosition == Vector3.zero
                 && transform.localRotation == Quaternion.identity
                 && transform.localScale == Vector3.one;
+        }
+        public static void         SetPositionAndRotationDontModifyChildren(this Transform transform, Vector3 position, Quaternion rotation)
+        {
+            CFrame[] cfs = new CFrame[transform.childCount];
+            for (int i=0; i<transform.childCount; ++i)
+                cfs[i] = new(transform.GetChild(i));
+            transform.SetPositionAndRotation(position, rotation);
+            for (int i = 0; i < transform.childCount; ++i)
+                transform.GetChild(i).Set(cfs[i]);
         }
 
 

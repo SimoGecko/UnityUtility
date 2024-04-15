@@ -52,16 +52,16 @@ namespace sxg
         {
         }
 
-        public CFrame(Transform t)
-        : this(t?.position ?? Vector3.zero, t?.rotation ?? Quaternion.identity)
+        public CFrame(Transform t, bool local = false)
         {
+            if (t == null)
+                (position, rotation) = (Vector3.zero, Quaternion.identity);
+            else if (!local)
+                (position, rotation) = (t.position, t.rotation);
+            else
+                (position, rotation) = (t.localPosition, t.localRotation);
         }
-        //public static Transf SmoothDamp(Transf current, Transf target, ref Transf currentVelocity, float smoothTime)
-        //{
-        //    Vector3 pos = Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime);
-        //    Quaternion rot = Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime);
-        //    return new(pos, rot);
-        //}
+
         public static CFrame identity => new(Vector3.zero, Quaternion.identity);
 
         public static implicit operator CFrame(Transform t)
@@ -87,6 +87,10 @@ namespace sxg
         public static CFrame operator *(Transform a, CFrame b)
         {
             return new CFrame(a) * b;
+        }
+        public static Vector3 operator *(CFrame a, Vector3 b)
+        {
+            return a.position + (a.rotation * b);
         }
 
         public CFrame inverse

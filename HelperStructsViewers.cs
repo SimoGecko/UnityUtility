@@ -123,8 +123,8 @@ namespace sxg
     }
 
     /*
-    [CustomPropertyDrawer(typeof(Transf))]
-    public class TransfDrawer : PropertyDrawer
+    [CustomPropertyDrawer(typeof(CFrame))]
+    public class CFrameDrawer : PropertyDrawer
     {
         public override void OnGUI(Rect rect, SerializedProperty property, GUIContent label)
         {
