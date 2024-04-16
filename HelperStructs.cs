@@ -52,7 +52,11 @@ namespace sxg
         {
         }
 
-        public CFrame(Transform t, bool local = false)
+        public CFrame(Transform t) // not using default parameter below for implicit conversion
+            : this (t, false)
+        {
+        }
+        public CFrame(Transform t, bool local)
         {
             if (t == null)
                 (position, rotation) = (Vector3.zero, Quaternion.identity);

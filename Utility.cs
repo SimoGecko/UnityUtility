@@ -1583,12 +1583,13 @@ namespace sxg
         public static IEnumerable<Transform> GetDescendants(this Transform transform, bool includeSelf = false, bool useDfsOrder = false)
         {
             // By default we run BFS. DFS is also available
-            if (includeSelf)
-                yield return transform;
 
             if (!useDfsOrder)
             {
                 // BFS
+                if (includeSelf)
+                    yield return transform;
+
                 Queue<Transform> queue = new();
                 queue.Enqueue(transform);
 

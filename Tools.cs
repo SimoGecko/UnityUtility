@@ -250,10 +250,10 @@ namespace sxg
         private static void ReserializeAllPrefabs()
         {
             // from https://www.reddit.com/r/Unity3D/comments/aabf4u/how_can_you_reserialize_all_prefabs_in_unity_2018x/
-            var prefabPaths = AssetDatabase.GetAllAssetPaths().Where(path => path.Contains(".prefab"));
-            foreach (string prefabPath in prefabPaths)
+            var paths = AssetDatabase.GetAllAssetPaths().Where(path => path.Contains(".prefab"));
+            foreach (string path in paths)
             {
-                GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (!PrefabUtility.IsPartOfImmutablePrefab(prefabAsset))
                 {
                     PrefabUtility.SavePrefabAsset(prefabAsset);
@@ -262,11 +262,26 @@ namespace sxg
         }
 
         [MenuItem("Tools/Reserialize all ScriptableObjects")]
-        private static void ReserializeAllItemAssets()
+        private static void ReserializeAllScriptableObjects()
         {
-            var scriptableObjectsPaths = AssetDatabase.GetAllAssetPaths().Where(path => path.Contains(".asset"));
+            var paths = AssetDatabase.GetAllAssetPaths().Where(path => path.Contains(".asset"));
             //.Where(path => AssetDatabase.LoadAssetAtPath<T>(path) != null);
-            AssetDatabase.ForceReserializeAssets(scriptableObjectsPaths);
+            AssetDatabase.ForceReserializeAssets(paths);
+        }
+
+        [MenuItem("Tools/Reserialize all Yaml Files")]
+        private static void ReserializeAllYamlFiles()
+        {
+            string[] extensions = new string[]
+            {
+                ".anim", ".asset", ".brush", ".controller", ".flare", ".fontsettings", ".giparams", ".guiskin", ".lighting", ".mask",
+                ".mat", ".meta", ".mixer", ".overrideController", ".playable", ".prefab", ".preset", ".renderTexture", ".scenetemplate",
+                ".shadervariants", ".signal", ".spriteatlas", ".spriteatlasv2", ".terrainlayer", ".unity", ".physicMaterial", ".physicsMaterial2D",
+            };
+            var paths = AssetDatabase.GetAllAssetPaths()
+                .Where(path => extensions.Any(ext => path.EndsWith(ext)))
+                .Where(path => !(path.Contains("3rdParty") || path.StartsWith("Packages/")));
+            AssetDatabase.ForceReserializeAssets(paths);
         }
 
 #if SNETCODE
