@@ -284,6 +284,39 @@ namespace sxg
             AssetDatabase.ForceReserializeAssets(paths);
         }
 
+        [MenuItem("Tools/Apply All Prefab Changes")]
+        static void ApplyAllPrefabChanges()
+        {
+            var prefabs = GetAllPrefabsInScene();
+            foreach (GameObject prefab in prefabs)
+                PrefabUtility.ApplyPrefabInstance(prefab, InteractionMode.AutomatedAction);
+        }
+
+        static IEnumerable<GameObject> GetAllPrefabsInScene()
+        {
+            List<GameObject> list = new();
+            void RecurseImpl(GameObject go)
+            {
+                GameObject prefab = PrefabUtility.GetCorrespondingObjectFromSource(go);
+                if (prefab != null)
+                {
+                    list.Add(go); // NOTE: not the prefab
+                }
+                else // only top-level objects
+                {
+                    foreach (var child in go.transform.GetChildren())
+                    {
+                        RecurseImpl(child.gameObject);
+                    }
+                }
+            }
+            GameObject[] rootGameObjects = UnityEngine.SceneManagement.SceneManager.GetActiveScene().GetRootGameObjects();
+            foreach (var root in rootGameObjects)
+                RecurseImpl(root);
+            return list;
+        }
+
+
 #if SNETCODE
         [MenuItem("Tools/Find NetworkObjects")]
         public static void FindNetworkObjects()
