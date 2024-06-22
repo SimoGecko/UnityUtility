@@ -25,10 +25,10 @@ namespace sxg
     {
         // -------------------- VARIABLES --------------------
 
-        // public
+        // PUBLIC
 
 
-        // private
+        // PRIVATE
         private Dictionary<string, object> attributes = new();
         [SerializeField][HideInInspector] private List<string> stringdata; // only used for serialization
 
@@ -36,7 +36,7 @@ namespace sxg
         private static readonly string keyRegexPattern = "[A-Za-z_][A-Za-z0-9_]*"; // only contains alphanumeric and _, not starting with digit
 
 
-        // references
+        // REFERENCES
 
 
         // -------------------- BASE METHODS --------------------
@@ -45,7 +45,7 @@ namespace sxg
         // -------------------- CUSTOM METHODS --------------------
 
 
-        // commands
+        // COMMANDS
         public void Set(string key, object value)
         {
             if (key.Length <= keyMaxLength && key.IsRegexMatch(keyRegexPattern))
@@ -296,11 +296,11 @@ namespace sxg
         }
 #endif
 
-        // queries
+        // QUERIES
         GameObject Go => gameObject;
         public Dictionary<string, object> Attributes => attributes;
 
-        // other
+        // OTHER
 
     }
 

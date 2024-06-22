@@ -20,14 +20,14 @@ namespace sxg.aw
     {
         // -------------------- VARIABLES --------------------
 
-        // public
+        // PUBLIC
         string userCode;
 
 
-        // private
+        // PRIVATE
 
 
-        // references
+        // REFERENCES
 
 
         // -------------------- BASE METHODS --------------------
@@ -138,10 +138,10 @@ namespace sxg.aw
             return result.CompiledAssembly;
         }
 
-        // queries
+        // QUERIES
 
 
-        // other
+        // OTHER
 
     }
 }

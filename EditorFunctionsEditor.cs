@@ -16,14 +16,14 @@ namespace sxg
     {
         // -------------------- VARIABLES --------------------
 
-        // public
+        // PUBLIC
         string searchQuery;
 
 
-        // private
+        // PRIVATE
         Vector2 scrollPos;
 
-        // references
+        // REFERENCES
         List<Container> containers;
 
 
@@ -35,7 +35,7 @@ namespace sxg
 
         // -------------------- CUSTOM METHODS --------------------
 
-        // commands
+        // COMMANDS
         protected override void OnGUI()
         {
             base.OnGUI();
@@ -90,7 +90,7 @@ namespace sxg
         }
 
 
-        // queries
+        // QUERIES
         static List<Container> BuildContainersAndFunctions()
         {
             List<Container> ans = new();
@@ -119,7 +119,7 @@ namespace sxg
         }
 
 
-        // other
+        // OTHER
         class Container
         {
             public string name;

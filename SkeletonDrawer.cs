@@ -9,16 +9,16 @@ namespace sxg
     public class SkeletonDrawer : MonoBehaviour
     {
 
-        // public
+        // PUBLIC
         public Color color = Color.white;
         public float boneWidth = 0.1f;
         public Vector3 boneEuler;
         public float defaultBoneLength = 0.1f;
 
-        // private
+        // PRIVATE
 
 
-        // other
+        // OTHER
         private void OnDrawGizmos()
         {
             Gizmos.color = color;
