@@ -9,7 +9,7 @@ using UnityEngine;
 
 ////////// PURPOSE: Shows all functions tagged with attribute [EditorButton] into a collapsable list of containers for easy calling //////////
 
-namespace sxg.mgp
+namespace sxg
 {
 #if SEDITOR
     public class EditorFunctionsEditor : MyEditorWindow

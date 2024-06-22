@@ -2198,7 +2198,7 @@ namespace sxg
                 string[] fields = line.Split(separator);
                 if (fields.Length != numStructFields)
                 {
-                    Debug.Log($"Skipping line: {line} - Field count mismatch");
+                    Debug.LogWarning($"Skipping line: {line} - Field count mismatch");
                     continue;
                 }
 
@@ -2434,7 +2434,7 @@ namespace sxg
             if (!fullpath.EndsWith(".png")) fullpath += ".png";
             System.IO.File.WriteAllBytes(fullpath, _bytes);
             if (log)
-                Debug.Log($"{_bytes.Length / 1024} Kb was saved as: {fullpath}");
+                Debug.Log($"Texture {texture.name} ({texture.width}x{texture.height} px, {_bytes.Length / 1024} Kb) was saved as: {fullpath}");
         }
         public static void         ExportMeshAsObj      (this Mesh mesh, string fullpath, bool log = true)
         {
