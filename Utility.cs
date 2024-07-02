@@ -416,10 +416,10 @@ namespace sxg
         {
             return Vector2.Perpendicular(vector);
         }
-        public static bool         IsParallel           (this Vector2 v1, Vector2 v2)
+        public static bool         IsParallel           (this Vector2 vector, Vector2 other)
         {
             //return (v1.x / v2.x).FuzzyEq(v1.y / v2.y);
-            return Mathf.Abs(Vector2.Dot(v1.normalized, v2.normalized)) > 0.9999f;
+            return Mathf.Abs(Vector2.Dot(vector.normalized, other.normalized)) > 0.9999f;
         }
 
 
@@ -432,9 +432,9 @@ namespace sxg
         {
             return new Vector2Int(vector.x, vector.z);
         }
-        public static bool         Collinear            (this Vector3 a, Vector3 b)
+        public static bool         Collinear            (this Vector3 vector, Vector3 other)
         {
-            return Vector3.Cross(a, b).IsZero();
+            return Vector3.Cross(vector, other).IsZero();
         }
         public static Vector3      GetTangent           (this Vector3 vector)
         {
@@ -468,13 +468,13 @@ namespace sxg
         {
             return (vector - other).IsZero();
         }
-        public static Vector3      Mult                 (this Vector3 a, Vector3 b)
+        public static Vector3      Mult                 (this Vector3 vector, Vector3 other)
         {
-            return new Vector3(a.x * b.x, a.y * b.y, a.z * b.z);
+            return new Vector3(vector.x * other.x, vector.y * other.y, vector.z * other.z);
         }
-        public static Vector3      Div                  (this Vector3 a, Vector3 b)
+        public static Vector3      Div                  (this Vector3 vector, Vector3 other)
         {
-            return new Vector3(a.x / b.x, a.y / b.y, a.z / b.z);
+            return new Vector3(vector.x / other.x, vector.y / other.y, vector.z / other.z);
         }
         public static bool         IsNan                (this Vector3 vector)
         {
@@ -1196,6 +1196,10 @@ namespace sxg
         {
             return enumerable.ElementAt(index.Mod(enumerable.Count()));
         }
+        public static T            At<T>                (this IEnumerable<T> enumerable, int index)
+        {
+            return enumerable.ElementAt(index);
+        }
 
 
         ////////////////////////// GEOMETRY ////////////////////////////////
@@ -1905,7 +1909,7 @@ namespace sxg
 
 
         ////////////////////////// RECTTRANSFORM ////////////////////////////////
-        public static Vector3      GetOrigin(this Plane plane)
+        public static Vector3      GetOrigin            (this Plane plane)
         {
             return -plane.normal * plane.distance;
         }
@@ -2064,127 +2068,140 @@ namespace sxg
 
 
         ////////////////////////// STRING ////////////////////////////////
-        public static string       RemoveSpaceAndTabs   (this string s)
+        public static string       RemoveSpaceAndTabs   (this string str)
         {
-            return s.Replace(" ", string.Empty).Replace("\t", string.Empty);
+            return str.Replace(" ", string.Empty).Replace("\t", string.Empty);
         }
-        public static string       RemoveCommaAndTabs   (this string s)
+        public static string       RemoveCommaAndTabs   (this string str)
         {
-            return s.Replace(",", string.Empty).Replace("\t", string.Empty);
+            return str.Replace(",", string.Empty).Replace("\t", string.Empty);
         }
-        public static string       RemoveAll            (this string s, string characters)
+        public static string       RemoveAll            (this string str, string characters)
         {
             foreach (char c in characters)
             {
-                s = s.Replace(c.ToString(), string.Empty);
+                str = str.Replace(c.ToString(), string.Empty);
             }
-            return s;
+            return str;
         }
-        public static string       ToReadableTime       (float timeInSeconds)
-        {
-            TimeSpan ts = TimeSpan.FromSeconds(timeInSeconds);
-            //if(ts.Days > 0)
-            //{
-            //    return string.Format("{0} days {1:D1}:{2:D2}:{3:D2}", ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
-            //}
-            if (ts.Hours > 0)
-            {
-                return string.Format("{0:D1}:{1:D2}:{2:D2}", ts.Hours, ts.Minutes, ts.Seconds);
-            }
-            else
-            {
-                return string.Format("{0:D1}:{1:D2}", ts.Minutes, ts.Seconds);
-            }
-        }
-        public static string       FormatTimestamp      (this DateTime value)
-        {
-            const string timestampFormat = "yyyy-MM-dd_HH:mm:ss";
-            return value.ToString(timestampFormat);
-        }
-        public static string       GetTimestampNow      ()
-        {
-            return FormatTimestamp(DateTime.Now);
-        }
-        public static string[]     SplitBy              (this string s, params char[] chars)
-        {
-            return s.Split(chars, StringSplitOptions.RemoveEmptyEntries);
-        }
-        public static string       GetTimestampNowPrecise()
-        {
-            const string timestampFormat = "yyyy/MM/dd HH:mm:ss.fff";
-            return DateTime.Now.ToString(timestampFormat);
-        }
-        public static string       GetTimestampWeb      (System.DateTime value)
-        {
-            return value.ToString("dd/MM/yy_HH:mm:ss");
-        }
-
-        public static string       AddSpacesBeforeCapitalLetters(string text, bool preserveAcronyms = true)
+        public static string       AddSpacesBeforeCapitalLetters(this string str, bool preserveAcronyms = true)
         {
             // from: https://stackoverflow.com/questions/272633/add-spaces-before-capital-letters
-            if (string.IsNullOrWhiteSpace(text))
+            if (string.IsNullOrWhiteSpace(str))
             {
                 return string.Empty;
             }
-            StringBuilder newText = new(text.Length * 2);
-            newText.Append(text[0]);
-            for (int i = 1; i < text.Length; i++)
+            StringBuilder newText = new(str.Length * 2);
+            newText.Append(str[0]);
+            for (int i = 1; i < str.Length; i++)
             {
-                if (char.IsUpper(text[i]))
+                if (char.IsUpper(str[i]))
                 {
-                    if ((text[i - 1] != ' ' && !char.IsUpper(text[i - 1])) ||
-                        (preserveAcronyms && char.IsUpper(text[i - 1]) && i < text.Length - 1 && !char.IsUpper(text[i + 1])))
+                    if ((str[i - 1] != ' ' && !char.IsUpper(str[i - 1])) ||
+                        (preserveAcronyms && char.IsUpper(str[i - 1]) && i < str.Length - 1 && !char.IsUpper(str[i + 1])))
                         newText.Append(' ');
                 }
-                newText.Append(text[i]);
+                newText.Append(str[i]);
             }
             return newText.ToString();
         }
-
-        public static string[][]   SplitCsv             (TextAsset textAsset)
+        public static bool         Like                 (this string str, string pattern)
         {
-            return SplitCsv(textAsset.text, textAsset.name);
+            return Regex.IsMatch(str, $"^{pattern}$");
         }
-        public static string[][]   SplitCsv             (string content, string filename = "", bool trim = false)
+        public static bool         IsRegexMatch         (this string str, string pattern)
         {
-            string[] lines = content.Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
-            string[][] cells = new string[lines.Length][];
-            int cols = 0;
-            for (int i = 0; i < lines.Length; i++)
+            return IsRegexMatch(str, pattern, out _);
+        }
+        public static bool         IsRegexMatch         (this string str, string pattern, out string[] tokens)
+        {
+            Regex regex = new(pattern);
+            if (regex.IsMatch(str))
             {
-
-                cells[i] = lines[i].Split(new char[] { '\t' }, StringSplitOptions.None);
-                if (i == 0) cols = cells[i].Length;
-                else { Debug.Assert(cells[i].Length == cols, $"The provided CSV {filename} file to split in not square (line {i})"); }
-            }
-            if (trim)
-            {
-                for (int i = 0; i < cells.Length; i++)
+                GroupCollection gc = regex.Match(str).Groups;
+                tokens = new string[gc.Count];
+                for (int i = 0; i < gc.Count; i++)
                 {
-                    for (int j = 0; j < cells[i].Length; j++)
-                    {
-                        cells[i][j] = cells[i][j].Trim();
-                    }
+                    tokens[i] = gc[i].ToString();
                 }
+                return true;
             }
-            return cells;
+            tokens = null;
+            return false;
         }
-        public static string[][]   Transpose            (this string[][] array)
+        public static string       TrimStart            (this string str, string prefix)
         {
-            int rows = array.Length;
-            int cols = array[0].Length;
-            string[][] ans = new string[cols][];
-            for (int c = 0; c < cols; c++)
+            if (str.StartsWith(prefix))
+                return str[prefix.Length..];
+            return str;
+        }
+        public static string       TrimEnd              (this string str, string suffix)
+        {
+            if (str.EndsWith(suffix))
+                return str[..^suffix.Length];
+            return str;
+        }
+        public static string       IntToAlphaNumeric    (int number, int N)
+        {
+            // Returns an N-character string derived from number.
+            // [A-Z0-9]{N}
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            int L = chars.Length;
+
+            string ans = "";
+            for (int i = 0; i < N; i++)
             {
-                ans[c] = new string[rows];
-                for (int r = 0; r < rows; r++)
+                int index = number.Mod(L);
+                number /= L;
+                ans += chars[index];
+            }
+            return ans;
+        }
+        [Obsolete("Use Split instead of SplitBy, optionally specifying RemoveEmptyEntries. Error prone otherwise", true)]
+        public static string[]     SplitBy              (this string str, params char[] chars)
+        {
+            return str.Split(chars, StringSplitOptions.RemoveEmptyEntries);
+        }
+
+
+        ////////////////////////// CSV PARSING ////////////////////////////////
+        public static T[,]         Transpose<T>         (this T[,] array)
+        {
+            int R = array.GetLength(0);
+            int C = array.GetLength(1);
+            T[,] ans = new T[C, R];
+            for (int c = 0; c < C; ++c)
+            {
+                for (int r = 0; r < R; ++r)
                 {
-                    ans[c][r] = array[r][c];
+                    ans[c, r] = array[r, c];
                 }
             }
             return ans;
         }
-        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = ',') where T : struct
+        public static string[,]   SplitCsv             (TextAsset textAsset)
+        {
+            return SplitCsv(textAsset.text);
+        }
+        public static string[,] SplitCsv(string content, char separator = '\t', bool trim = false)
+        {
+            string[] lines = content.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
+            int R = lines.Length;
+            int C = lines[0].Count(c => c == separator) + 1;
+            string[,] cells = new string[R, C];
+            for (int r = 0; r < R; ++r)
+            {
+                string[] tokens = lines[r].Split(separator, StringSplitOptions.None);
+                Debug.Assert(tokens.Length == C, $"The provided CSV file to split in not square on line {r}. Expected {C}, got {tokens.Length}.\n{lines[r]}");
+                for (int c = 0; c < C && c < tokens.Length; ++c)
+                {
+                    cells[r, c] = trim ? tokens[c].Trim() : tokens[c];
+                }
+            }
+            return cells;
+        }
+        
+        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = '\t')
         {
             List<T> ans = new();
             StringReader reader = new(csvData);
@@ -2207,7 +2224,7 @@ namespace sxg
             }
             return ans;
         }
-        private static T           ParseStruct<T>       (string[] fields) where T : struct
+        private static T           ParseStruct<T>       (string[] fields)
         {
             T result = default;
             int index = 0;
@@ -2218,58 +2235,6 @@ namespace sxg
                 index++;
             }
             return result;
-        }
-
-        public static string       IntToAlphaNumeric    (int number, int N)
-        {
-            // [A-Z0-9]{N}
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-            int L = chars.Length;
-
-            string ans = "";
-            for (int i = 0; i < N; i++)
-            {
-                int index = number.Mod(L);
-                number /= L;
-                ans += chars[index];
-            }
-            return ans;
-        }
-        public static bool         Like                 (this string input, string pattern)
-        {
-            return Regex.IsMatch(input, $"^{pattern}$");
-        }
-        public static bool         IsRegexMatch         (this string input, string pattern)
-        {
-            return IsRegexMatch(input, pattern, out _);
-        }
-        public static bool         IsRegexMatch         (this string input, string pattern, out string[] tokens)
-        {
-            Regex regex = new(pattern);
-            if (regex.IsMatch(input))
-            {
-                GroupCollection gc = regex.Match(input).Groups;
-                tokens = new string[gc.Count];
-                for (int i = 0; i < gc.Count; i++)
-                {
-                    tokens[i] = gc[i].ToString();
-                }
-                return true;
-            }
-            tokens = null;
-            return false;
-        }
-        public static string       TrimStart            (this string str, string prefix)
-        {
-            if (str.StartsWith(prefix))
-                return str[prefix.Length..];
-            return str;
-        }
-        public static string       TrimEnd              (this string str, string suffix)
-        {
-            if (str.EndsWith(suffix))
-                return str[..^suffix.Length];
-            return str;
         }
 
 
@@ -2516,6 +2481,10 @@ namespace sxg
             }
             return path;
         }
+        public static void         Fill                 (this Texture2D texture, Color32 color)
+        {
+            texture.SetPixels32(Enumerable.Repeat(color, texture.width * texture.height).ToArray());
+        }
 
         public static void SyncChildrenInstantiate<T, U>(this Transform parent, IEnumerable<T> list, U prefab, Action<T, U> action, Action<U> init = null) where U : Component
         {
@@ -2584,7 +2553,7 @@ namespace sxg
         }
 
 
-        ////////////////////////// SERIALIZATION ////////////////////////////////
+        ////////////////////////// MISC ////////////////////////////////
         private static string      F(float value) => $"{value:0.00000}f";
         public static string       Prettify(this Vector3 v)
         {
@@ -2603,6 +2572,10 @@ namespace sxg
         {
             unityEvent.RemoveAllListeners();
             unityEvent.AddListener(call);
+        }
+        public static void Swap<T>(ref T a, ref T b)
+        {
+            (b, a) = (a, b);
         }
 
 
@@ -2703,6 +2676,40 @@ namespace sxg
 
 
         ////////////////////////// TIME ////////////////////////////////
+        public static string       ToReadableTime       (float timeInSeconds)
+        {
+            TimeSpan ts = TimeSpan.FromSeconds(timeInSeconds);
+            //if(ts.Days > 0)
+            //{
+            //    return string.Format("{0} days {1:D1}:{2:D2}:{3:D2}", ts.Days, ts.Hours, ts.Minutes, ts.Seconds);
+            //}
+            if (ts.Hours > 0)
+            {
+                return string.Format("{0:D1}:{1:D2}:{2:D2}", ts.Hours, ts.Minutes, ts.Seconds);
+            }
+            else
+            {
+                return string.Format("{0:D1}:{1:D2}", ts.Minutes, ts.Seconds);
+            }
+        }
+        public static string       FormatTimestamp      (this DateTime value)
+        {
+            const string timestampFormat = "yyyy-MM-dd_HH:mm:ss";
+            return value.ToString(timestampFormat);
+        }
+        public static string       GetTimestampNow      ()
+        {
+            return FormatTimestamp(DateTime.Now);
+        }
+        public static string       GetTimestampNowPrecise()
+        {
+            const string timestampFormat = "yyyy/MM/dd HH:mm:ss.fff";
+            return DateTime.Now.ToString(timestampFormat);
+        }
+        public static string       GetTimestampWeb      (System.DateTime value)
+        {
+            return value.ToString("dd/MM/yy_HH:mm:ss");
+        }
         public static void         LogWithTime          (string message)
         {
             Debug.Log($"{message} (gametime = {Time.time}, realtime  = {Time.realtimeSinceStartup})");
@@ -2869,9 +2876,5 @@ namespace sxg
             return camera.fieldOfView;
         }
 
-        public static void         Swap<T>(ref T a, ref T b)
-        {
-            (b, a) = (a, b);
-        }
     }
 }

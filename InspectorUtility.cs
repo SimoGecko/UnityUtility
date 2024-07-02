@@ -248,6 +248,10 @@ namespace sxg
 
         protected virtual void OnGUI()
         {
+            GUI.enabled = false;
+            EditorGUILayout.ObjectField("Script", MonoScript.FromScriptableObject(this), GetType(), false);
+            GUI.enabled = true;
+            // TODO: this doesn't work to serialize array contents (maybe only works for arrays of references?)
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUIStyle.none);
 
             ScriptableObject scriptableObj = this;

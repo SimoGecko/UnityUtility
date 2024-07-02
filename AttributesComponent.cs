@@ -117,7 +117,7 @@ namespace sxg
                 return $"{obj} (GameObject)";
             else if (obj is Component)
             {
-                string derivedType = obj.GetType().ToString().SplitBy('.').Last();
+                string derivedType = obj.GetType().ToString().Split('.').Last();
                 return $"{obj} ({derivedType})";
             }
             Debug.Assert(false, "Unreachable code");
