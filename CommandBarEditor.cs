@@ -1,12 +1,13 @@
 // (c) Simone Guggiari 2024
 
-using UnityEngine;
-using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.Reflection;
-using UnityEditor;
 using System.Text.RegularExpressions;
 using System.Text;
+using System;
+using UnityEditor;
+using UnityEngine;
 
 ////////// PURPOSE: Editor that executes some C# code provided as string //////////
 
@@ -14,13 +15,14 @@ using System.Text;
 /// obtained from https://github.com/SebLague/Runtime-CSharp-Test, as well as mcs.dll under Assets/Plugins
 /// Have also a look at https://github.com/JakubNei/mcs-ICodeCompiler
 
-namespace sxg.aw
+namespace sxg
 {
     public class CommandBarEditor : MyEditorWindow
     {
         // -------------------- VARIABLES --------------------
 
         // PUBLIC
+        //public UnityEngine.Object obj;
         string userCode;
 
 
@@ -77,7 +79,10 @@ namespace sxg.aw
             userCode = SyntacticSugar(userCode);
             Debug.Log($"> {userCode}");
             string code = @$"
-                using UnityEngine; using UnityEditor; using UnityEngine.Tilemaps;
+                using System; using System.Collections; using System.Collections.Generic; using System.Linq;
+                using UnityEngine; using UnityEditor; using UnityEngine.UI; using UnityEngine.Tilemaps; 
+                using sxg; using sxg.aw;
+
                 public class MyClass {{
                     public static void MyMethod(){{
                         {userCode};
@@ -99,19 +104,30 @@ namespace sxg.aw
             // game.GameObject1.child.transform.position => GameObject.Find("GameObject1/child").transform.position
             // game.GameObject1:MyComponent.value => GameObject.Find("GameObject1").GetComponent<MyComponent>().value
             // (TileBase)assets.Tiles.map_tiles_0 => AssetDatabase.LoadAssetAtPath<TileBase>("Assets/Tiles/map_tiles_0.asset")
-            userCode = userCode
-                .Replace("print", "Debug.Log")
-                .Replace("warn", "Debug.LogWarning");
-            userCode = new Regex(@"game\.([\w/]+):(\w+)").Replace(userCode, @"GameObject.Find(""$1"").GetComponent<$2>()");
-            userCode = new Regex(@"game\.([\w/]+)").Replace(userCode, @"GameObject.Find(""$1"")");
+
+            List<(string, string)> replacements = new()
+            {
+                (@"\bprint\b\(", "Debug.Log("),
+                (@"\bwarn\b\(", "Debug.LogWarning("),
+                (@"game\.([\w/]+):(\w+)", @"GameObject.Find(""$1"").GetComponent<$2>()"),
+                (@"game\.([\w/]+)", @"GameObject.Find(""$1"")"),
+                (@"script\.([\w/]+)", @"GameObject.FindObjectOfType<$1>()"),
+                (@"\((\w+)\)assets\.([\w./]+)", @"($1)AssetDatabase.LoadAssetAtPath<$1>(""Assets/$2"")")
+            };
+
+            foreach (var replace in replacements)
+                userCode = new Regex(replace.Item1).Replace(userCode, replace.Item2);
+
             return userCode;
         }
 
         private static Assembly Compile(string source)
         {
-            var options = new CompilerParameters();
-            options.GenerateExecutable = false;
-            options.GenerateInMemory = true;
+            var options = new CompilerParameters
+            {
+                GenerateExecutable = false,
+                GenerateInMemory = true
+            };
 
             foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
             {
@@ -130,7 +146,6 @@ namespace sxg.aw
                 foreach (var err in result.Errors)
                 {
                     sb.AppendLine(err.ToString());
-                    //Debug.LogError(err);
                 }
                 Debug.LogError(sb.ToString());
             }

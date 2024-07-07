@@ -167,39 +167,28 @@ namespace sxg
 
 
         ////////////////////////// ROUND ////////////////////////////////
-        public static float        Round                (float value, int amount)
+
+        public static float        MRound               (this float value, float amount)
         {
             return Mathf.Round(value / amount) * amount;
         }
-        public static float        RoundDown            (float value, int amount)
+        public static float        MRoundDown           (this float value, float amount)
         {
             return Mathf.Floor(value / amount) * amount;
         }
-        public static float        RoundUp              (float value, int amount)
+        public static float        MRoundUp             (this float value, float amount)
         {
             return Mathf.Ceil(value / amount) * amount;
         }
-        public static float        Round                (float value, float amount)
-        {
-            return Mathf.Round(value / amount) * amount;
-        }
-        public static float        RoundDown            (float value, float amount)
-        {
-            return Mathf.Floor(value / amount) * amount;
-        }
-        public static float        RoundUp              (float value, float amount)
-        {
-            return Mathf.Ceil(value / amount) * amount;
-        }
-        public static int          Round                (int value, int amount)
+        public static int          MRound               (this int value, int amount)
         {
             return Mathf.RoundToInt(value / amount) * amount;
         }
-        public static int          RoundDown            (int value, int amount)
+        public static int          MRoundDown           (this int value, int amount)
         {
             return Mathf.FloorToInt(value / amount) * amount;
         }
-        public static int          RoundUp              (int value, int amount)
+        public static int          MRoundUp             (this int value, int amount)
         {
             return Mathf.CeilToInt(value / amount) * amount;
         }
@@ -2200,8 +2189,7 @@ namespace sxg
             }
             return cells;
         }
-        
-        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = '\t')
+        public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = '\t') where T : struct
         {
             List<T> ans = new();
             StringReader reader = new(csvData);
@@ -2213,6 +2201,7 @@ namespace sxg
                     continue;
 
                 string[] fields = line.Split(separator);
+                // TODO: make it robust to fields out of order or not all fields
                 if (fields.Length != numStructFields)
                 {
                     Debug.LogWarning($"Skipping line: {line} - Field count mismatch");
@@ -2224,7 +2213,7 @@ namespace sxg
             }
             return ans;
         }
-        private static T           ParseStruct<T>       (string[] fields)
+        private static T           ParseStruct<T>       (string[] fields) where T : struct
         {
             T result = default;
             int index = 0;

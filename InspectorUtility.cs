@@ -552,6 +552,43 @@ namespace sxg
 
     }
 
+    // Allows to draw all elements of a struct or class in a single line for nicer view inside arrays or lists.
+    // Subclass this class and override properties and widths.
+    /*
+    [CustomPropertyDrawer(typeof(_TYPE_))]
+    public class _TYPE_Drawer : ArrayInlineDrawer
+    {
+        override protected string[] properties => new[] { "myproperty", ... };
+        override protected float[] widths => new[] { 0.5f, ... };
+    }
+    */
+    public abstract class ArrayInlineDrawer : PropertyDrawer
+    {
+        protected virtual string[] properties => null;
+        protected virtual float[] widths => null;
+        float margin = 10f;
+
+        // adapted from https://docs.unity3d.com/ScriptReference/PropertyDrawer.html
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+            var indent = EditorGUI.indentLevel;
+            EditorGUI.indentLevel = 0;
+
+            float offset = 0f;
+            for (int i = 0; i < properties.Length; i++)
+            {
+                float width = widths[i] * position.width;
+                Rect propRect = new Rect(position.x + offset, position.y, width, position.height);
+                offset += width + margin;
+                EditorGUI.PropertyField(propRect, property.FindPropertyRelative(properties[i]), GUIContent.none);
+            }
+
+            EditorGUI.indentLevel = indent;
+            EditorGUI.EndProperty();
+        }
+    }
+
 
 #else
     public class ReadOnlyAttribute : Attribute
