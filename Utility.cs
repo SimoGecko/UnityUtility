@@ -7,7 +7,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using TMPro;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -182,15 +181,15 @@ namespace sxg
         }
         public static int          MRound               (this int value, int amount)
         {
-            return Mathf.RoundToInt(value / amount) * amount;
+            return Mathf.RoundToInt((float)value / amount) * amount;
         }
         public static int          MRoundDown           (this int value, int amount)
         {
-            return Mathf.FloorToInt(value / amount) * amount;
+            return Mathf.FloorToInt((float)value / amount) * amount;
         }
         public static int          MRoundUp             (this int value, int amount)
         {
-            return Mathf.CeilToInt(value / amount) * amount;
+            return Mathf.CeilToInt((float)value / amount) * amount;
         }
         public static float        RoundDecimals        (this float value, int decimals)
         {
@@ -410,6 +409,10 @@ namespace sxg
             //return (v1.x / v2.x).FuzzyEq(v1.y / v2.y);
             return Mathf.Abs(Vector2.Dot(vector.normalized, other.normalized)) > 0.9999f;
         }
+        public static Vector2Int   ToInt                (this Vector2 vector)
+        {
+            return new(Mathf.RoundToInt(vector.x), Mathf.RoundToInt(vector .y));
+        }
 
 
         ////////////////////////// VECTOR3 ////////////////////////////////
@@ -500,6 +503,10 @@ namespace sxg
         public static Vector3      Clamp                (this Vector3 vector, float min, float max)
         {
             return vector.normalized * Mathf.Clamp(vector.magnitude, min, max);
+        }
+        public static Vector3Int   ToInt                (this Vector3 vector)
+        {
+            return new(Mathf.RoundToInt(vector.x), Mathf.RoundToInt(vector.y), Mathf.RoundToInt(vector.z));
         }
 
 #pragma warning disable IDE1006 // Naming rule violation: These words must begin with upper case characters
@@ -2151,6 +2158,10 @@ namespace sxg
         {
             return str.Split(chars, StringSplitOptions.RemoveEmptyEntries);
         }
+        public static string       RepeatString         (string str, int n)
+        {
+            return string.Concat(Enumerable.Repeat(str, n));
+        }
 
 
         ////////////////////////// CSV PARSING ////////////////////////////////
@@ -2436,7 +2447,7 @@ namespace sxg
             c.a = alpha;
             image.color = c;
         }
-        public static void         SetAlpha             (this TextMeshProUGUI text, float alpha)
+        public static void         SetAlpha             (this Text text, float alpha)
         {
             if (text == null) return;
             Color c = text.color;
@@ -2616,6 +2627,11 @@ namespace sxg
         {
             Color32 c = color;
             uint value = (uint)(c.r << 16) | (uint)(c.g << 8) | (uint)(c.b << 0);
+            if (c.a != 255)
+            {
+                value = (value << 8) | (uint)c.a;
+                return $"#{value:X8}";
+            }
             return $"#{value:X6}";
         }
 
@@ -2623,16 +2639,20 @@ namespace sxg
         {
             if (hex.IsNullOrEmpty())
                 return Color.white;
-            hex.TrimStart('#');
+            hex = hex.TrimStart('#');
             uint ans = Convert.ToUInt32(hex, 16);
-            return Hex2Color(ans);
+            return Hex2Color(ans, hex.Length == 8);
         }
-        public static Color        Hex2Color            (uint hex)
+        public static Color        Hex2Color            (uint hex, bool hasAlpha = false)
         {
-            byte r = (byte)((hex >> 16) & 0xff);
-            byte g = (byte)((hex >>  8) & 0xff);
-            byte b = (byte)((hex      ) & 0xff);
-            return new Color32(r, g, b, 255);
+            byte x = (byte)((hex >> 24) & 0xff);
+            byte y = (byte)((hex >> 16) & 0xff);
+            byte z = (byte)((hex >>  8) & 0xff);
+            byte w = (byte)((hex      ) & 0xff);
+            if (hasAlpha)
+                return new Color32(x, y, z, w);
+            else
+                return new Color32(y, z, w, 255);
         }
         public static Color        SmoothDampColor      (Color current, Color target, ref Color velocity, float smoothTime)
         {

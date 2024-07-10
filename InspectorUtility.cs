@@ -137,7 +137,7 @@ namespace sxg
         public string Tooltip { get; private set; }
         public int Size { get; private set; }
 
-        internal string GetLabel(MemberInfo memberInfo)
+        public string GetLabel(MemberInfo memberInfo)
         {
             return string.IsNullOrEmpty(Label) ? Prettify(memberInfo.Name) : Label;
         }
@@ -237,7 +237,13 @@ namespace sxg
         static void ShowWindow() => GetWindow<T>();
         */
 
+        private SerializedObject serialObj;
         private Vector2 scrollPosition = Vector2.zero;
+
+        private void OnEnable()
+        {
+            serialObj = new SerializedObject(this);
+        }
 
         private IEnumerable<string> FieldNames()
         {
@@ -248,14 +254,13 @@ namespace sxg
 
         protected virtual void OnGUI()
         {
+            serialObj.Update();
+
             GUI.enabled = false;
             EditorGUILayout.ObjectField("Script", MonoScript.FromScriptableObject(this), GetType(), false);
             GUI.enabled = true;
-            // TODO: this doesn't work to serialize array contents (maybe only works for arrays of references?)
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUIStyle.none);
 
-            ScriptableObject scriptableObj = this;
-            SerializedObject serialObj = new(scriptableObj);
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition, GUIStyle.none);
 
             var fieldNames = FieldNames();
             foreach (string fieldName in fieldNames)
@@ -266,9 +271,15 @@ namespace sxg
             serialObj.ApplyModifiedProperties();
 
             // TODO: Draw additional method parameters as required
-            ButtonDrawerHelper.DrawButtonsForType(this.GetType(), this);
+            try
+            {
+                ButtonDrawerHelper.DrawButtonsForType(this.GetType(), this);
+            }
+            finally
+            {
+                EditorGUILayout.EndScrollView();
+            }
 
-            EditorGUILayout.EndScrollView();
         }
 
         protected Transform Target => Selection.activeGameObject.transform;

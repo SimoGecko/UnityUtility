@@ -17,6 +17,12 @@ namespace sxg.hl
             EditorApplication.projectWindowItemOnGUI += HandeProjectWindowOnGui;
         }
 
+        private void OnDestroy()
+        {
+            EditorApplication.hierarchyWindowItemOnGUI -= HandleHierarchyWindowOnGui;
+            EditorApplication.projectWindowItemOnGUI -= HandeProjectWindowOnGui;
+        }
+
         private static void HandleHierarchyWindowOnGui(int instanceID, Rect selectionRect)
         {
             var go = EditorUtility.InstanceIDToObject(instanceID) as GameObject;

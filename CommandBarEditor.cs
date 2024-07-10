@@ -22,7 +22,7 @@ namespace sxg
         // -------------------- VARIABLES --------------------
 
         // PUBLIC
-        //public UnityEngine.Object obj;
+        public UnityEngine.Object obj;
         string userCode;
 
 
@@ -55,7 +55,7 @@ namespace sxg
             {
                 if (GUILayout.Button("Run", GUILayout.Width(60)) ||
                     (e.type == EventType.KeyDown && e.keyCode == KeyCode.Return))
-                    ExecuteCode(userCode);
+                    ExecuteCode(userCode, obj);
             }
             finally
             {
@@ -74,7 +74,7 @@ namespace sxg
         }
         */
 
-        private static void ExecuteCode(string userCode)
+        private static void ExecuteCode(string userCode, UnityEngine.Object obj)
         {
             userCode = SyntacticSugar(userCode);
             Debug.Log($"> {userCode}");
@@ -84,7 +84,7 @@ namespace sxg
                 using sxg; using sxg.aw;
 
                 public class MyClass {{
-                    public static void MyMethod(){{
+                    public static void MyMethod(UnityEngine.Object obj){{
                         {userCode};
                     }}
                 }}
@@ -93,8 +93,8 @@ namespace sxg
             var method = assembly?.GetType("MyClass")?.GetMethod("MyMethod");
             if (method == null)
                 return;
-            var del = (Action)Delegate.CreateDelegate(typeof(Action), method);
-            del.Invoke();
+            var del = (Action<UnityEngine.Object>)Delegate.CreateDelegate(typeof(Action<UnityEngine.Object>), method);
+            del.Invoke(obj);
         }
 
         private static string SyntacticSugar(string userCode)
