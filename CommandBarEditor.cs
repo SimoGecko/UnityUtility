@@ -38,7 +38,7 @@ namespace sxg
         static void ShowWindow()
         {
             var window = GetWindow<CommandBarEditor>();
-            // d_Exposure, d_Favorite, d_UnityEditor.ConsoleWindow, d_Import, d_PlayButton, align_horizontally_left_active, d_TextAsset Icon, 
+            // d_Exposure, d_Favorite, d_UnityEditor.ConsoleWindow, d_Import, d_PlayButton, align_horizontally_left_active, d_TextAsset Icon,
             Texture icon = EditorGUIUtility.IconContent("d_Exposure").image;
             window.titleContent = new GUIContent("Command Bar", icon);
         }
@@ -80,7 +80,7 @@ namespace sxg
             Debug.Log($"> {userCode}");
             string code = @$"
                 using System; using System.Collections; using System.Collections.Generic; using System.Linq;
-                using UnityEngine; using UnityEditor; using UnityEngine.UI; using UnityEngine.Tilemaps; 
+                using UnityEngine; using UnityEditor; using UnityEngine.UI; using UnityEngine.Tilemaps;
                 using sxg; using sxg.aw;
 
                 public class MyClass {{

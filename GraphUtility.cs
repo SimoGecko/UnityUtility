@@ -11,7 +11,7 @@ using UnityEngine;
 // SP path finding, shortest path (Dijkstra, A*, Bellman-Ford, Floyd-Warshall, Johnson)
 // MST, minimum spanning tree (Kruskal, Prim)
 // SCC strongly connected components (Tarjan, Kosaraju)
-// TS topological sorting (topologicalsorting, 
+// TS topological sorting (topologicalsorting, ...)
 // Flow (Edmonds-Karp, Dinic)
 // Assignment (Hungarian)
 

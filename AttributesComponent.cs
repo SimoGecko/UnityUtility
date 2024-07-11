@@ -12,7 +12,7 @@ using UnityEngine;
 //     bool, int, float, string, Vector2/3/4, Quaternion, (CFrame), Color
 //     (RaycastHit), Bounds, Rect, Ray
 //     GameObject, (Transform), Component, (Mesh)
-// 
+//
 // ROBLOX supports: string bool number UDim/2 BrickColor Color3 Vector2/3 CFrame NumberSequence ColorSequence NumberRange Font
 
 // CFrame = (V3, quat), Bounds=(V3, V3), Rect=(float 4x), Ray=(V3, V3)

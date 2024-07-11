@@ -16,7 +16,7 @@ using UnityEngine.UI;
 
 namespace sxg
 {
-    // Naming: Get / Find / Compute / 
+    // Naming: Get / Find / Compute / ...
     public static partial class Utility
     {
         static readonly float eps = 1e-4f;
@@ -2179,11 +2179,11 @@ namespace sxg
             }
             return ans;
         }
-        public static string[,]   SplitCsv             (TextAsset textAsset)
+        public static string[,]    SplitCsv             (TextAsset textAsset)
         {
             return SplitCsv(textAsset.text);
         }
-        public static string[,] SplitCsv(string content, char separator = '\t', bool trim = false)
+        public static string[,]    SplitCsv             (string content, char separator = '\t', bool trim = false)
         {
             string[] lines = content.Split(new[] { "\r\n", "\n", "\r" }, StringSplitOptions.None);
             int R = lines.Length;
@@ -2199,6 +2199,42 @@ namespace sxg
                 }
             }
             return cells;
+        }
+        public static IEnumerable<Dictionary<string, object>> ParseCsvWithHeader(string content, char separator = '\t')
+        {
+            List<Dictionary<string, object>> ans = new();
+            string[,] cells = SplitCsv(content, separator);
+            // check header
+            int R = cells.GetLength(0);
+            int C = cells.GetLength(1);
+            HashSet<string> headers = new();
+            for (int c = 0; c < C; ++c)
+            {
+                string header = cells[0, c];
+                Debug.Assert(!header.IsNullOrEmpty(), "Empty header");
+                Debug.Assert(!headers.Contains(header), $"Duplicate header: {header}");
+                headers.Add(header);
+            }
+            for (int r = 1; r < R; ++r)
+            {
+                Dictionary<string, object> record = new();
+                for (int c = 0; c < C; ++c)
+                {
+                    string cell = cells[r, c];
+                    object value;
+                    if (int.TryParse(cell, out int i))
+                        value = i;
+                    else if (float.TryParse(cell, out float f))
+                        value = f;
+                    else if (bool.TryParse(cell, out bool b)) // True/False with this capitalization. TODO: support other capitalization
+                        value = b;
+                    else
+                        value = cell; // string
+                    record.Add(cells[0, c], value);
+                }
+                ans.Add(record);
+            }
+            return ans;
         }
         public static IEnumerable<T> ParseCsv<T>        (string csvData, char separator = '\t') where T : struct
         {
