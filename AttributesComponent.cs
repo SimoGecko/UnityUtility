@@ -205,17 +205,17 @@ namespace sxg
         {
             switch (type)
             {
-            case EType.Bool: return typeof(bool);
-            case EType.Int: return typeof(int);
-            case EType.Float: return typeof(float);
-            case EType.String: return typeof(string);
-            case EType.Vector2: return typeof(Vector2);
-            case EType.Vector3: return typeof(Vector3);
-            case EType.Vector4: return typeof(Vector4);
+            case EType.Bool:       return typeof(bool);
+            case EType.Int:        return typeof(int);
+            case EType.Float:      return typeof(float);
+            case EType.String:     return typeof(string);
+            case EType.Vector2:    return typeof(Vector2);
+            case EType.Vector3:    return typeof(Vector3);
+            case EType.Vector4:    return typeof(Vector4);
             case EType.Quaternion: return typeof(Quaternion);
-            case EType.Color: return typeof(Color);
+            case EType.Color:      return typeof(Color);
             case EType.GameObject: return typeof(GameObject);
-            case EType.Component: return typeof(Component);
+            case EType.Component:  return typeof(Component);
             }
             Debug.Assert(false, "Unreachable code");
             return null;
@@ -224,17 +224,17 @@ namespace sxg
         {
             switch (type)
             {
-            case EType.Bool: return false;
-            case EType.Int: return 0;
-            case EType.Float: return 0f;
-            case EType.String: return "";
-            case EType.Vector2: return Vector2.zero;
-            case EType.Vector3: return Vector3.zero;
-            case EType.Vector4: return Vector4.zero;
+            case EType.Bool:       return false;
+            case EType.Int:        return 0;
+            case EType.Float:      return 0f;
+            case EType.String:     return "";
+            case EType.Vector2:    return Vector2.zero;
+            case EType.Vector3:    return Vector3.zero;
+            case EType.Vector4:    return Vector4.zero;
             case EType.Quaternion: return Quaternion.identity;
-            case EType.Color: return Color.white;
+            case EType.Color:      return Color.white;
             case EType.GameObject: return null;
-            case EType.Component: return null;
+            case EType.Component:  return null;
             }
             Debug.Assert(false, "Unreachable code");
             return null;

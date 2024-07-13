@@ -1462,9 +1462,10 @@ namespace sxg
             }
             return ans;
         }
-        public static T            ParseEnum<T>(this string value)
+        [Obsolete("Method is deprecated, use Enum.Parse<T> instead", true)]
+        public static T            ParseEnum<T>(this string value) where T: struct
         {
-            return (T)Enum.Parse(typeof(T), value);
+            return Enum.Parse<T>(value);
         }
         public static T            Next<T>                            (this T enumValue) where T : Enum
         {
@@ -1982,7 +1983,7 @@ namespace sxg
             case ForceMode.VelocityChange: // m/s -> rb.velocity += value
                 return value * mass / dt;
             }
-            Debug.Assert(false);
+            Debug.Assert(false, "Unreachable");
             return Vector3.zero;
         }
         public static float        ConvertToForce       (float value, ForceMode mode, float mass, float dt)
@@ -2590,28 +2591,38 @@ namespace sxg
 
 
         ////////////////////////// MISC ////////////////////////////////
-        private static string      F(float value) => $"{value:0.00000}f";
-        public static string       Prettify(this Vector3 v)
+        private static string      F                    (float value) => $"{value:0.00000}f";
+        public static string       Prettify             (this Vector3 v)
         {
             return $"Vector3({F(v.x)}, {F(v.y)}, {F(v.z)})";
         }
-        public static string       Prettify(this Quaternion q)
+        public static string       Prettify             (this Quaternion q)
         {
             return $"Quat({F(q.x)}, {F(q.y)}, {F(q.z)}, {F(q.w)})";
         }
-        public static void         SetListener<T>(this UnityEvent<T> unityEvent, UnityAction<T> call)
+        public static void         SetListener<T>       (this UnityEvent<T> unityEvent, UnityAction<T> call)
         {
             unityEvent.RemoveAllListeners();
             unityEvent.AddListener(call);
         }
-        public static void         SetListener(this UnityEvent unityEvent, UnityAction call)
+        public static void         SetListener          (this UnityEvent unityEvent, UnityAction call)
         {
             unityEvent.RemoveAllListeners();
             unityEvent.AddListener(call);
         }
-        public static void Swap<T>(ref T a, ref T b)
+        public static void         Swap<T>              (ref T a, ref T b)
         {
             (b, a) = (a, b);
+        }
+        public static int          CountBits            (this int value)
+        {
+            int count = 0;
+            while (value != 0)
+            {
+                count++;
+                value &= value - 1;
+            }
+            return count;
         }
 
 

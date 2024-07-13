@@ -222,6 +222,7 @@ namespace sxg
                 "gray"    => Color.gray, // grey
                 "orange"  => new Color(1, 0.5f, 0f),
                 "purple"  => new Color(0.5f, 0, 0.5f),
+                // TODO: assert unreachable
                 _         => Color.white,
             };;
         }
