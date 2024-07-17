@@ -166,86 +166,123 @@ namespace sxg
 
 
         ////////////////////////// ROUND ////////////////////////////////
+        public static Vector2      Round                (this Vector2 vector)
+        {
+            return new Vector2(Mathf.Round(vector.x), Mathf.Round(vector.y));
+        }
+        public static Vector3      Round                (this Vector3 vector)
+        {
+            return new Vector3(Mathf.Round(vector.x), Mathf.Round(vector.y), Mathf.Round(vector.z));
+        }
+        public static Vector2Int   RoundToInt           (this Vector2 vector)
+        {
+            return new Vector2Int(Mathf.RoundToInt(vector.x), Mathf.RoundToInt(vector.y));
+        }
+        public static Vector3Int   RoundToInt           (this Vector3 vector)
+        {
+            return new Vector3Int(Mathf.RoundToInt(vector.x), Mathf.RoundToInt(vector.y), Mathf.RoundToInt(vector.z));
+        }
+        public static Vector2      Ceil                 (this Vector2 vector)
+        {
+            return new Vector2(Mathf.Ceil(vector.x), Mathf.Ceil(vector.y));
+        }
+        public static Vector3      Ceil                 (this Vector3 vector)
+        {
+            return new Vector3(Mathf.Ceil(vector.x), Mathf.Ceil(vector.y), Mathf.Ceil(vector.z));
+        }
+        public static Vector2Int   CeilToInt            (this Vector2 vector)
+        {
+            return new Vector2Int(Mathf.CeilToInt(vector.x), Mathf.CeilToInt(vector.y));
+        }
+        public static Vector3Int   CeilToInt            (this Vector3 vector)
+        {
+            return new Vector3Int(Mathf.CeilToInt(vector.x), Mathf.CeilToInt(vector.y), Mathf.CeilToInt(vector.z));
+        }
+        public static Vector2      Floor                (this Vector2 vector)
+        {
+            return new Vector2(Mathf.Floor(vector.x), Mathf.Floor(vector.y));
+        }
+        public static Vector3      Floor                (this Vector3 vector)
+        {
+            return new Vector3(Mathf.Floor(vector.x), Mathf.Floor(vector.y), Mathf.Floor(vector.z));
+        }
+        public static Vector2Int   FloorToInt           (this Vector2 vector)
+        {
+            return new Vector2Int(Mathf.FloorToInt(vector.x), Mathf.FloorToInt(vector.y));
+        }
+        public static Vector3Int   FloorToInt           (this Vector3 vector)
+        {
+            return new Vector3Int(Mathf.FloorToInt(vector.x), Mathf.FloorToInt(vector.y), Mathf.FloorToInt(vector.z));
+        }
 
-        public static float        MRound               (this float value, float amount)
+        public static int          MRound               (this int value, int multiple)
         {
-            return Mathf.Round(value / amount) * amount;
+            return Mathf.RoundToInt((float)value / multiple) * multiple;
         }
-        public static float        MRoundDown           (this float value, float amount)
+        public static float        MRound               (this float value, float multiple)
         {
-            return Mathf.Floor(value / amount) * amount;
+            return Mathf.Round(value / multiple) * multiple;
         }
-        public static float        MRoundUp             (this float value, float amount)
+        public static Vector2      MRound               (this Vector2 vector, float multiple)
         {
-            return Mathf.Ceil(value / amount) * amount;
+            return new Vector2(vector.x.MRound(multiple), vector.y.MRound(multiple));
         }
-        public static int          MRound               (this int value, int amount)
+        public static Vector3      MRound               (this Vector3 vector, float multiple)
         {
-            return Mathf.RoundToInt((float)value / amount) * amount;
+            return new Vector3(vector.x.MRound(multiple), vector.y.MRound(multiple), vector.z.MRound(multiple));
         }
-        public static int          MRoundDown           (this int value, int amount)
+        public static int          MCeil                (this int value, int multiple)
         {
-            return Mathf.FloorToInt((float)value / amount) * amount;
+            return Mathf.CeilToInt((float)value / multiple) * multiple;
         }
-        public static int          MRoundUp             (this int value, int amount)
+        public static float        MCeil                (this float value, float multiple)
         {
-            return Mathf.CeilToInt((float)value / amount) * amount;
+            return Mathf.Ceil(value / multiple) * multiple;
         }
+        public static Vector2      MCeil                (this Vector2 vector, float multiple)
+        {
+            return new Vector2(vector.x.MCeil(multiple), vector.y.MCeil(multiple));
+        }
+        public static Vector3      MCeil                (this Vector3 vector, float multiple)
+        {
+            return new Vector3(vector.x.MCeil(multiple), vector.y.MCeil(multiple), vector.z.MCeil(multiple));
+        }
+        public static int          MFloor               (this int value, int multiple)
+        {
+            return Mathf.FloorToInt((float)value / multiple) * multiple;
+        }
+        public static float        MFloor               (this float value, float multiple)
+        {
+            return Mathf.Floor(value / multiple) * multiple;
+        }
+        public static Vector2      MFloor               (this Vector2 vector, float multiple)
+        {
+            return new Vector2(vector.x.MFloor(multiple), vector.y.MFloor(multiple));
+        }
+        public static Vector3      MFloor               (this Vector3 vector, float multiple)
+        {
+            return new Vector3(vector.x.MFloor(multiple), vector.y.MFloor(multiple), vector.z.MFloor(multiple));
+        }
+
         public static float        RoundDecimals        (this float value, int decimals)
         {
             return System.MathF.Round(value, decimals);
         }
-
         public static float        Clean                (float value, float amount, float eps)
         {
             float closest = Mathf.Round(value / amount) * amount;
-            if (Mathf.Abs(closest - value) <= eps) return closest;
+            if (Mathf.Abs(closest - value) <= eps)
+                return closest;
             return value;
         }
-
-        public static Vector2      Round                (this Vector2 vector, int amount)
-        {
-            return new Vector2(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount);
-        }
-        public static Vector2      RoundDown            (this Vector2 vector, int amount)
-        {
-            return new Vector2(Mathf.Floor(vector.x / amount) * amount, Mathf.Floor(vector.y / amount) * amount);
-        }
-        public static Vector2      RoundUp              (this Vector2 vector, int amount)
-        {
-            return new Vector2(Mathf.Ceil(vector.x / amount) * amount, Mathf.Ceil(vector.y / amount) * amount);
-        }
-        public static Vector2      RoundF               (this Vector2 vector, float amount)
-        {
-            return new Vector2(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount);
-        }
-
-        public static Vector3      Round                (this Vector3 vector, int amount)
-        {
-            return new Vector3(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount, Mathf.Round(vector.z / amount) * amount);
-        }
-        public static Vector3      RoundDown            (this Vector3 vector, int amount)
-        {
-            return new Vector3(Mathf.Floor(vector.x / amount) * amount, Mathf.Floor(vector.y / amount) * amount, Mathf.Round(vector.z / amount) * amount);
-        }
-        public static Vector3      RoundUp              (this Vector3 vector, int amount)
-        {
-            return new Vector3(Mathf.Ceil(vector.x / amount) * amount, Mathf.Ceil(vector.y / amount) * amount, Mathf.Round(vector.z / amount) * amount);
-        }
-        public static Vector3      RoundF               (this Vector3 vector, float amount)
-        {
-            return new Vector3(Mathf.Round(vector.x / amount) * amount, Mathf.Round(vector.y / amount) * amount, Mathf.Round(vector.z / amount) * amount);
-        }
-
         public static Vector3      Clean                (this Vector3 vector, float amount, float eps)
         {
             return new Vector3(Clean(vector.x, amount, eps), Clean(vector.y, amount, eps), Clean(vector.z, amount, eps));
         }
-        public static void         RoundTo              (this Transform transform, float amount)
+        public static void         MRound               (this Transform transform, float amount)
         {
-            transform.localPosition = RoundF(transform.localPosition, amount);
+            transform.localPosition = MRound(transform.localPosition, amount);
         }
-
 
         ////////////////////////// RECT ////////////////////////////////
         public static Vector2      GetPoint             (this Rect rect, float x, float y)

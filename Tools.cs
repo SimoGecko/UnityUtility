@@ -134,7 +134,7 @@ namespace sxg
             {
                 foreach (GameObject go in selected)
                 {
-                    Utility.RoundTo(go.transform, fraction);
+                    Utility.MRound(go.transform, fraction);
                 }
             }
         }
