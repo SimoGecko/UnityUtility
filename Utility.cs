@@ -1147,7 +1147,6 @@ namespace sxg
                 using var enumerator2 = list2.GetEnumerator();
                 while (enumerator1.MoveNext() && enumerator2.MoveNext())
                 {
-
                     yield return (
                         enumerator1.Current,
                         enumerator2.Current);

@@ -224,7 +224,7 @@ namespace sxg
                 "purple"  => new Color(0.5f, 0, 0.5f),
                 // TODO: assert unreachable
                 _         => Color.white,
-            };;
+            };
         }
     }
 #else

@@ -53,7 +53,7 @@ namespace sxg
         }
 
         public CFrame(Transform t) // not using default parameter below for implicit conversion
-            : this (t, false)
+            : this(t, false)
         {
         }
         public CFrame(Transform t, bool local)
@@ -162,7 +162,7 @@ namespace sxg
     //[System.Serializable]
     public struct Property<T>
     {
-        [SerializeField] [ReadOnly] private T val;
+        [SerializeField][ReadOnly] private T val;
         public event System.Action<T> OnChange;
         public event System.Action<T, T> OnChangeBoth;
 

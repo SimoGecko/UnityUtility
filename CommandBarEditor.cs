@@ -1,11 +1,11 @@
 // (c) Simone Guggiari 2024
 
+using System;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Text.RegularExpressions;
 using System.Text;
-using System;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -15,6 +15,7 @@ using UnityEngine;
 /// obtained from https://github.com/SebLague/Runtime-CSharp-Test, as well as mcs.dll under Assets/Plugins
 /// Have also a look at https://github.com/JakubNei/mcs-ICodeCompiler
 
+#if SEDITOR
 namespace sxg
 {
     public class CommandBarEditor : MyEditorWindow
@@ -160,3 +161,4 @@ namespace sxg
 
     }
 }
+#endif
