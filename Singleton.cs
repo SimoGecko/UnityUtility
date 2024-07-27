@@ -21,8 +21,13 @@ namespace sxg
             get
             {
                 if (instance == null)
+#if UNITY_6000_0_OR_NEWER
+                    instance = FindAnyObjectByType<T>();
+                //Debug.Assert(FindObjectsByType<T>(FindObjectsSortMode.None).Length <= 1, $"Singleton: multiple instances of {nameof(T)}");
+#else
                     instance = FindObjectOfType<T>();
                 //Debug.Assert(FindObjectsOfType<T>().Length <= 1, $"Singleton: multiple instances of {nameof(T)}");
+#endif
                 return instance;
             }
         }
@@ -37,7 +42,11 @@ namespace sxg
     {
         void CheckSingletonInstance<T>() where T : MonoBehaviour
         {
+#if UNITY_6000_0_OR_NEWER
+            bool atMostOne = GameObject.FindObjectsByType<Singleton<T>>(FindObjectsSortMode.None).Length <= 1;
+#else
             bool atMostOne = GameObject.FindObjectsOfType<Singleton<T>>().Length <= 1;
+#endif
             if (!atMostOne)
                 Debug.LogWarning($"Invalid number of Managers: {typeof(T).FullName}");
         }

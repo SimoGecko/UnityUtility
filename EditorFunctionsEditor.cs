@@ -104,7 +104,11 @@ namespace sxg
                 var container = ans.Find(t => t.name == typeName);
                 if (container == null)
                 {
+#if UNITY_6000_0_OR_NEWER
+                    object obj = FindAnyObjectByType(mi.DeclaringType);
+#else
                     object obj = FindObjectOfType(mi.DeclaringType);
+#endif
                     container = new() { name = typeName, obj = obj };
                     ans.Add(container);
                 }
@@ -137,4 +141,4 @@ namespace sxg
 
     }
 #endif
-}
+                }

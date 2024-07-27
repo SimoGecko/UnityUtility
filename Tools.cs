@@ -122,6 +122,7 @@ namespace sxg
         [MenuItem("Tools/Transform/Round To 0.5")]   public static void RoundTo1_2() { RoundTo(1f / 2f); }
         [MenuItem("Tools/Transform/Round To 0.25")]  public static void RoundTo1_4() { RoundTo(1f / 4f); }
         [MenuItem("Tools/Transform/Round To 0.125")] public static void RoundTo1_8() { RoundTo(1f / 8f); }
+        [MenuItem("Tools/Transform/Round To 1_16")]  public static void RoundTo1_16(){ RoundTo(1f / 16f); }
         [MenuItem("Tools/Transform/Round To 2")]     public static void RoundTo2()   { RoundTo(2f); }
         [MenuItem("Tools/Transform/Round To 4")]     public static void RoundTo4()   { RoundTo(4f); }
         [MenuItem("Tools/Transform/Round To 5")]     public static void RoundTo5()   { RoundTo(5f); }
@@ -277,11 +278,14 @@ namespace sxg
                 ".anim", ".asset", ".brush", ".controller", ".flare", ".fontsettings", ".giparams", ".guiskin", ".lighting", ".mask",
                 ".mat", ".meta", ".mixer", ".overrideController", ".playable", ".prefab", ".preset", ".renderTexture", ".scenetemplate",
                 ".shadervariants", ".signal", ".spriteatlas", ".spriteatlasv2", ".terrainlayer", ".unity", ".physicMaterial", ".physicsMaterial2D",
+                // need to also include raw assets
+                ".cs", ".png",
             };
-            var paths = AssetDatabase.GetAllAssetPaths()
-                .Where(path => extensions.Any(ext => path.EndsWith(ext)))
+            IEnumerable<string> paths = AssetDatabase.GetAllAssetPaths()
                 .Where(path => !(path.Contains("3rdParty") || path.StartsWith("Packages/")));
+                //.Where(path => extensions.Any(ext => path.EndsWith(ext)))
             AssetDatabase.ForceReserializeAssets(paths);
+            Debug.Log($"Reserialized {paths.Count()} paths.");
         }
 
         [MenuItem("Tools/Apply All Prefab Changes")]

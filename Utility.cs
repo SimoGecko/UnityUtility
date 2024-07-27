@@ -299,10 +299,6 @@ namespace sxg
                 (point.x - rect.xMin) / rect.width,
                 (point.y - rect.yMin) / rect.height);
         }
-        public static Vector2      GetRandomPoint       (this Rect rect)
-        {
-            return rect.position + new Vector2(rect.size.x * UnityEngine.Random.value, rect.size.y * UnityEngine.Random.value);
-        }
         public static Vector2      Clamp                (this Rect rect, Vector2 vector)
         {
             vector.x = Mathf.Clamp(vector.x, rect.xMin, rect.xMax);
@@ -758,6 +754,16 @@ namespace sxg
             return UnityEngine.Random.Range(v.x, v.y + 1);
         }
         public static Vector2      RandomInside         (this Rect rect)
+        {
+            return rect.position + new Vector2(rect.size.x * UnityEngine.Random.value, rect.size.y * UnityEngine.Random.value);
+        }
+        public static Vector3      RandomInside         (this Bounds bounds)
+        {
+            Vector3 rand = new (UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value);
+            return bounds.min + rand.Mult(bounds.size);
+        }
+        [Obsolete("Use RandomInside", true)]
+        public static Vector2      GetRandomPoint       (this Rect rect)
         {
             return rect.position + new Vector2(rect.size.x * UnityEngine.Random.value, rect.size.y * UnityEngine.Random.value);
         }
@@ -1967,13 +1973,18 @@ namespace sxg
         }
         public static void         SetVelocity          (this Rigidbody rb, Vector3 velocity)
         {
+#if UNITY_6000_0_OR_NEWER
+            rb.AddForce(velocity - rb.linearVelocity, ForceMode.VelocityChange);
+#else
             rb.AddForce(velocity - rb.velocity, ForceMode.VelocityChange);
+#endif
         }
         public static void         AddAcceleration      (this Rigidbody rb, Vector3 acceleration)
         {
             rb.AddForce(acceleration, ForceMode.Acceleration);
         }
 
+#if !UNITY_6000_0_OR_NEWER
         [Obsolete("Method is deprecated", true)]
         public static void         AddAccelerationMaxVelocity_DEPRECATED(this Rigidbody rb, Vector3 acceleration, float maxVelocity)
         {
@@ -1999,6 +2010,7 @@ namespace sxg
                 //rb.AddAcceleration(-rb.velocity.normalized * breakAcc);
             }
         }
+#endif
         public static void         AddRelativeForceAtPosition(this Rigidbody rb, Vector3 force, Vector3 position, ForceMode mode)
         {
             Vector3 forceWorld = rb.transform.TransformVector(force);
@@ -2618,7 +2630,11 @@ namespace sxg
         {
             if (!includeInactive)
                 return GameObject.Find(name);
+#if UNITY_6000_0_OR_NEWER
+            return GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include, FindObjectsSortMode.None).Where(go => go.name == name).FirstOrDefault();
+#else
             return GameObject.FindObjectsOfType<GameObject>(true).Where(go => go.name == name).FirstOrDefault();
+#endif
         }
         public static bool         HasComponent<T>      (this GameObject go) where T : Component
         {
