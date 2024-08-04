@@ -1553,7 +1553,14 @@ namespace sxg
         {
             for (int i = transform.childCount - 1; i >= 0; --i)
             {
+#if SEDITOR
+                if (Application.isPlaying)
+                    GameObject.Destroy(transform.GetChild(i).gameObject);
+                else
+                    GameObject.DestroyImmediate(transform.GetChild(i).gameObject);
+#else
                 GameObject.Destroy(transform.GetChild(i).gameObject);
+#endif
             }
         }
         public static void         DestroyAllChildrenImmediate(this Transform transform)
@@ -1587,7 +1594,9 @@ namespace sxg
         {
             static float Volume(Transform t)
             {
-                return t.GetComponentInChildren<MeshRenderer>()?.localBounds.Volume() ?? 0f;
+                if (t.TryGetComponent<MeshRenderer>(out MeshRenderer mr))
+                    return mr.localBounds.Volume();
+                return 0f;
             }
             SortChildren(transform, false, (t1, t2) => Volume(t1).CompareTo(Volume(t2)));
         }
