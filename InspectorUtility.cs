@@ -256,6 +256,8 @@ namespace sxg
         {
             serialObj.Update();
 
+            EditorGUIUtility.wideMode = true;
+
             GUI.enabled = false;
             EditorGUILayout.ObjectField("Script", MonoScript.FromScriptableObject(this), GetType(), false);
             GUI.enabled = true;
@@ -279,7 +281,6 @@ namespace sxg
             {
                 EditorGUILayout.EndScrollView();
             }
-
         }
 
         protected Transform Target => Selection.activeGameObject.transform;
