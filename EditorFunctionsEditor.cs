@@ -118,7 +118,7 @@ namespace sxg
                     container.functions.Add(function);
                 }
             }
-            ans.Sort((t1, t2) => t1.name.CompareTo(t2.name));
+            ans.Sort(t => t.name);
             return ans;
         }
 
