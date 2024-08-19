@@ -6,7 +6,7 @@ using UnityEngine;
 
 ////////// PURPOSE: A Dictionary<K,V> that is serializable. You need to specialize it with the actual types. //////////
 
-namespace sxg
+namespace sxg.serializabledictionary
 {
     // from https://discussions.unity.com/t/solved-how-to-serialize-dictionary-with-unity-serialization-system/71474
 

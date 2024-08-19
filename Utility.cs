@@ -1238,6 +1238,14 @@ namespace sxg
         {
             return enumerable.ElementAt(index);
         }
+        public static void         Sort<T, C>          (this List<T> list, Func<T, C> comparer) where C : IComparable
+        {
+            list.Sort((t1, t2) => comparer(t1).CompareTo(comparer(t2)));
+        }
+        public static void         Sort<T, C>              (this T[] array, Func<T, C> comparer) where C : IComparable
+        {
+            System.Array.Sort(array, (t1, t2) => comparer(t1).CompareTo(comparer(t2)));
+        }
 
 
         ////////////////////////// GEOMETRY ////////////////////////////////

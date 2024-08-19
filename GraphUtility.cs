@@ -91,7 +91,7 @@ namespace sxg
                 }
             }
 
-            costs.Sort((cost1, cost2) => cost1.Item3.CompareTo(cost2.Item3)); // increasing
+            costs.Sort(cost => cost.Item3); // increasing
             foreach (var cost in costs)
             {
                 if (UF[cost.Item1] != UF[cost.Item2]) // find-set
