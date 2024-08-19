@@ -90,12 +90,14 @@ namespace sxg
                     }}
                 }}
             ";
+#if CCOMPILER
             var assembly = Compile(code);
             var method = assembly?.GetType("MyClass")?.GetMethod("MyMethod");
             if (method == null)
                 return;
             var del = (Action<UnityEngine.Object>)Delegate.CreateDelegate(typeof(Action<UnityEngine.Object>), method);
             del.Invoke(obj);
+#endif
         }
 
         private static string SyntacticSugar(string userCode)
@@ -122,6 +124,7 @@ namespace sxg
             return userCode;
         }
 
+#if CCOMPILER
         private static Assembly Compile(string source)
         {
             var options = new CompilerParameters
@@ -153,7 +156,7 @@ namespace sxg
 
             return result.CompiledAssembly;
         }
-
+#endif
         // QUERIES
 
 

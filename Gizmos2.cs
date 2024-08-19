@@ -181,11 +181,12 @@ namespace sxg
         public static void DrawTransform(Vector3 position, Quaternion rotation, float scale = 0.1f, float alpha = 0.93f)
         {
             Color color = Gizmos.color;
-            Gizmos.color = new Color32(219, 62, 29, 237); // unity red
+            byte a = (byte)(255 * alpha);
+            Gizmos.color = new Color32(219, 62, 29, a); // unity red
             Gizmos2.DrawLine(position, position + (rotation * Vector3.right) * scale, 2f);
-            Gizmos.color = new Color32(154, 243, 72, 237); // unity green
+            Gizmos.color = new Color32(154, 243, 72, a); // unity green
             Gizmos2.DrawLine(position, position + (rotation * Vector3.up) * scale, 2f);
-            Gizmos.color = new Color32(58, 122, 248, 237); // unity blue
+            Gizmos.color = new Color32(58, 122, 248, a); // unity blue
             Gizmos2.DrawLine(position, position + (rotation * Vector3.forward) * scale, 2f);
             Gizmos.color = color;
         }
