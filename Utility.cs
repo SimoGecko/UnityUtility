@@ -19,7 +19,7 @@ namespace sxg
     // Naming: Get / Find / Compute / ...
     public static partial class Utility
     {
-        static readonly float eps = 1e-4f;
+        static readonly float eps = 1e-5f;
 
         ////////////////////////// MATH ////////////////////////////////
         public static int          Mod                  (this int value, int mod)
@@ -80,6 +80,7 @@ namespace sxg
         {
             return Mathf.Sign(value) * Mathf.Clamp(value, min, max);
         }
+        [Obsolete("Use FuzzyEq instead", true)]
         public static bool         IsClose              (this float value, float value2)
         {
             return Mathf.Abs(value - value2) <= eps;
@@ -277,7 +278,10 @@ namespace sxg
         }
         public static Vector3      Clean                (this Vector3 vector, float amount, float eps)
         {
-            return new Vector3(Clean(vector.x, amount, eps), Clean(vector.y, amount, eps), Clean(vector.z, amount, eps));
+            return new Vector3(
+                Clean(vector.x, amount, eps),
+                Clean(vector.y, amount, eps),
+                Clean(vector.z, amount, eps));
         }
         public static void         MRound               (this Transform transform, float amount)
         {
@@ -431,7 +435,7 @@ namespace sxg
         }
         public static bool         IsZero               (this Vector2 vector)
         {
-            return vector.sqrMagnitude <= eps * eps;
+            return vector.sqrMagnitude <= eps; // eps * eps;
         }
         public static Vector2      Perpendicular        (this Vector2 vector)
         {
@@ -487,9 +491,10 @@ namespace sxg
         }
         public static bool         IsZero               (this Vector3 vector)
         {
-            return vector.sqrMagnitude <= eps * eps;
+            return vector.sqrMagnitude <= eps; // eps * eps;
         }
-        public static bool         IsClose              (this Vector3 vector, Vector3 other)
+        [Obsolete("Use FuzzyEq instead", true)]
+        public static bool IsClose(this Vector3 vector, Vector3 other)
         {
             return (vector - other).IsZero();
         }
@@ -511,7 +516,7 @@ namespace sxg
         }
         public static bool         IsUnit               (this Vector3 vector)
         {
-            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps;
+            return Mathf.Abs(vector.sqrMagnitude - 1f) <= eps; // (eps * eps + 2 * eps);
         }
         public static void         Deconstruct          (this Vector3 vector, out float x, out float y, out float z)
         {
@@ -607,7 +612,8 @@ namespace sxg
         }
         public static Quaternion   SmoothDampOld        (Quaternion rot, Quaternion target, ref Quaternion deriv, float time)
         {
-            if (Time.deltaTime < Mathf.Epsilon) return rot;
+            if (Time.deltaTime < eps)
+                return rot;
             // account for double-cover
             float dot = Quaternion.Dot(rot, target);
             float multi = dot >= 0f ? 1f : -1f;
@@ -663,6 +669,16 @@ namespace sxg
             Vector3 axis = v / angle;
             return Quaternion.AngleAxis(angle, axis);
         }
+        public static bool         IsZero               (this Quaternion q)
+        {
+            float q_sqrMagnitude = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+            return q_sqrMagnitude <= eps; // eps * eps;
+        }
+        public static bool         IsUnit               (this Quaternion q)
+        {
+            float q_sqrMagnitude = q.x*q.x + q.y*q.y + q.z*q.z + q.w*q.w;
+            return Mathf.Abs(q_sqrMagnitude - 1f) <= eps; // (eps * eps + 2 * eps);
+        }
 
 
         ////////////////////////// FUZZY MATH ////////////////////////////////
@@ -677,6 +693,7 @@ namespace sxg
         }
         public static bool         FuzzyEq               (this Vector3 v, Vector3 o)
         {
+            //return (v - o).IsZero();
             return FuzzyEq(v.x, o.x) && FuzzyEq(v.y, o.y) && FuzzyEq(v.z, o.z);
         }
         public static bool         FuzzyEq               (this Matrix4x4 m1, Matrix4x4 m2)
@@ -830,7 +847,7 @@ namespace sxg
         {
             //Avoid getting u == 0
             float u1 = 0f, u2 = 0f;
-            while (u1 < Mathf.Epsilon || u2 < Mathf.Epsilon)
+            while (u1 < eps || u2 < eps)
             {
                 u1 = UnityEngine.Random.value; //random.random()
                 u2 = UnityEngine.Random.value;
@@ -1377,7 +1394,7 @@ namespace sxg
             }
 
             float den = Mathf.Sqrt(2f * (d.x * d.x - d.x * r.x + d.y * d.y - d.y * r.y));
-            Debug.Assert(Mathf.Abs(den) > Mathf.Epsilon, "FindNormalVector divide by 0");
+            Debug.Assert(Mathf.Abs(den) > eps, "FindNormalVector divide by 0");
             float deninv = 1f / den;
             return new Vector2((d.x - r.x) * deninv, (d.y - r.y) * deninv);
         }
@@ -1788,7 +1805,7 @@ namespace sxg
             transform.SetLocalPositionAndRotation(Vector3.zero, Quaternion.identity);
             transform.localScale = Vector3.one;
         }
-        public static void         Clean                (this Transform transform, float eps = 1e-4f)
+        public static void         Clean                (this Transform transform, float eps = 1e-5f)
         {
             transform.localPosition = Clean(transform.localPosition, 1f, eps);
             transform.localEulerAngles = Clean(transform.localEulerAngles, 90f, eps);
