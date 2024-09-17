@@ -202,10 +202,10 @@ namespace sxg
         //    {
         //        go.transform.ForeachDescendant(t =>
         //        {
-        //            //foreach(Component c in t.GetComponents<Component>())
+        //            //foreach (Component c in t.GetComponents<Component>())
         //            {
         //                UnityEngine.Object[] deps = EditorUtility.CollectDependencies(t.GetComponents<Component>());
-        //                foreach(var o in deps)
+        //                foreach (var o in deps)
         //                {
         //                    //EditorUtility.ReferenceEquals
         //                    //if (!o)
@@ -222,7 +222,7 @@ namespace sxg
         //{
         //    CutsceneAnimation[] ts = GameObject.FindObjectsOfType<CutsceneAnimation>();
         //    string ans = "";
-        //    foreach(CutsceneAnimation t in ts)
+        //    foreach (CutsceneAnimation t in ts)
         //    {
         //        ans += $"{t.gameObject.name}\n";
         //    }

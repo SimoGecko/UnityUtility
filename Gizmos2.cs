@@ -194,8 +194,11 @@ namespace sxg
         public static void DrawLine(Vector3 from, Vector3 to, float thickness = 3f)
         {
 #if (SEDITOR && UNITY_EDITOR)
+            Matrix4x4 matrix = UnityEditor.Handles.matrix;
+            UnityEditor.Handles.matrix = Gizmos.matrix;
             UnityEditor.Handles.color = Gizmos.color;
             UnityEditor.Handles.DrawLine(from, to, thickness);
+            UnityEditor.Handles.matrix = matrix;
 #else
             Gizmos.DrawLine(from, to);
 #endif

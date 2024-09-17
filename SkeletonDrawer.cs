@@ -1,6 +1,7 @@
 // (c) Simone Guggiari 2024
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 ////////// PURPOSE: Draws a skeleton's bones //////////
@@ -11,14 +12,13 @@ namespace sxg
     {
 
         // PUBLIC
-        public Color color = Color.white;
+        public Color color = new(1f, 1f, 1f, 0.5f);
         public float boneWidth = 0.1f;
-        public Vector3 boneEuler;
-        public float defaultBoneLength = 0.1f;
+        public Vector3 boneEuler = new(-90f, 0f, 0f);
 
-        public bool drawNames;
-        public bool drawAxes;
-        public bool drawLeaves;
+        public bool drawNames = false;
+        public bool drawAxes = true;
+        public bool drawLeaves = true;
 
         // PRIVATE
         List<TBone> skeleton;
@@ -28,6 +28,44 @@ namespace sxg
             public Transform t;
             public float length;
             public TBone parent;
+            public Quaternion rotation;
+
+            public TBone(Transform t, TBone parent, Quaternion rotation)
+            {
+                this.t = t;
+                this.parent = parent;
+                this.rotation = rotation;
+                this.length = CalcBoneLength();
+                bool flip = t.GetAncestors(includeSelf: true).Any(t => t.gameObject.tag == "BoneFlip");
+                if (flip)
+                    this.rotation *= Quaternion.Euler(180f, 0f, 0f);
+            }
+
+            public Vector3 Dir => (t.rotation * rotation) * Vector3.forward;
+            public Vector3 Tail => t.position + Dir * length;
+            public Quaternion Rot => t.rotation * rotation;
+
+            private float CalcBoneLength()
+            {
+                float defaultBoneLength = 0.1f; // TODO: param?
+
+                if (t.childCount == 0)
+                    return parent != null ? parent.length * 0.8f : defaultBoneLength;
+                if (t.childCount == 1)
+                    return Vector3.Distance(t.position, t.GetChild(0).position);
+                else
+                    return Vector3.Distance(t.position, MostLikelyDirectChildBone().position);
+            }
+
+            private Transform MostLikelyDirectChildBone()
+            {
+                Debug.Assert(t.childCount > 0);
+                Vector3 boneDir = Dir;
+                return t.GetChildren().FindBest(ct =>
+                {
+                    return Vector3.Angle(boneDir, ct.position - t.position);
+                });
+            }
         }
 
 
@@ -36,14 +74,18 @@ namespace sxg
         // -------------------- CUSTOM METHODS --------------------
 
         // COMMANDS
+        [EditorButton]
+        void EDITOR_MakeSkeleton() => MakeSkeleton();
+
         void MakeSkeleton()
         {
             skeleton = new();
+            Quaternion rot = Quaternion.Euler(boneEuler);
             foreach (var t in transform.GetDescendants(includeSelf: true))
             {
-                float length = CalcBoneLength(t);
                 TBone parent = skeleton.Find(b => b.t == t.parent);
-                skeleton.Add(new() { t = t, length = length, parent = parent });
+                skeleton.Add(new(t, parent, rot));
+                //float length = CalcBoneLength(t);
             }
         }
 
@@ -55,28 +97,6 @@ namespace sxg
         }
 
         // QUERIES
-        Vector3 Dir(Transform bone) => (bone.rotation * Quaternion.Euler(boneEuler)) * Vector3.forward;
-        Vector3 Tail(Transform bone, float length) => bone.position + Dir(bone) * length;
-
-        float CalcBoneLength(Transform t)
-        {
-            if (t.childCount == 0)
-                return defaultBoneLength;
-            if (t.childCount == 1)
-                return Vector3.Distance(t.position, t.GetChild(0).position);
-            else
-                return Vector3.Distance(t.position, MostLikelyDirectChildBone(t).position);
-        }
-
-        Transform MostLikelyDirectChildBone(Transform t)
-        {
-            Debug.Assert(t.childCount > 0);
-            Vector3 boneDir = Dir(t);
-            return t.GetChildren().FindBest(ct =>
-            {
-                return Vector3.Angle(boneDir, ct.position - t.position);
-            });
-        }
 
 
         // OTHER
@@ -85,20 +105,18 @@ namespace sxg
             if (skeleton.IsNullOrEmpty())
                 MakeSkeleton();
             Gizmos.color = color;
-            Quaternion rot = Quaternion.Euler(boneEuler);
             foreach (var bone in skeleton)
             {
                 Transform t = bone.t;
                 float length = bone.length;
-                if (!drawLeaves && t.childCount == 0)
-                    continue;
                 float width = length * boneWidth;
-                Gizmos2.DrawPyramid(t.position, t.rotation * rot, length, width);
+                if (drawLeaves || t.childCount > 0)
+                    Gizmos2.DrawPyramid(t.position, bone.Rot, length, width);
                 if (drawNames)
-                    Gizmos2.DrawLabel(t.name, Vector3.Lerp(t.position, Tail(t, length), 0.5f));
+                    Gizmos2.DrawLabel(t.name, Vector3.Lerp(t.position, bone.Tail, 0.5f));
                 if (drawAxes)
                     Gizmos2.DrawTransform(t, width/2f, color.a);
-                if (bone.parent != null && Vector3.Distance(t.position, Tail(bone.parent.t, bone.parent.length)) > 1e-1f)
+                if (bone.parent != null && Vector3.Distance(t.position, bone.parent.Tail) > 0.01f)
                     DrawDottedLine(t.position, t.parent.position);
             }
         }

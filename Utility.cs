@@ -902,41 +902,61 @@ namespace sxg
 
 
         ////////////////////////// SEQUENCES / COLLECTIONS ////////////////////////////////
-        public static T            Last<T>              (this IEnumerable<T> enumerable, T defaultT = default)
+        public static T            Last<T>              (this IEnumerable<T> enumerable)
         {
-            if (enumerable == null || enumerable.Count() == 0) return defaultT;
+            if (enumerable.IsNullOrEmpty())
+                return default;
             return enumerable.ElementAt(enumerable.Count() - 1);
         }
-        public static T            SafeGet<T>           (this IEnumerable<T> enumerable, int index, T defaultT = default)
+        public static T            SafeGet<T>           (this IEnumerable<T> enumerable, int index)
         {
-            if (enumerable == null || index < 0 || index >= enumerable.Count())
-                return defaultT;
+            if (enumerable.IsNullOrEmpty() || index < 0 || index >= enumerable.Count())
+                return default;
             return enumerable.ElementAt(index);
         }
-        public static T            Get<T>               (this IEnumerable<T> enumerable, int index, T defaultT = default)
+        public static T            Get<T>               (this IEnumerable<T> enumerable, int index)
         {
-            if (enumerable == null || enumerable.Count() == 0) return defaultT;
-            return enumerable.ElementAt(index.Mod(enumerable.Count()));
+            if (enumerable.IsNullOrEmpty())
+                return default;
+            return enumerable.ElementAt(index);//index.Mod(enumerable.Count()));
         }
-        public static T            GetClamp<T>          (this IEnumerable<T> enumerable, int index, T defaultT = default)
+        public static T            GetClamp<T>          (this IEnumerable<T> enumerable, int index)
         {
-            if (enumerable == null || enumerable.Count() == 0) return defaultT;
+            if (enumerable.IsNullOrEmpty())
+                return default;
             return enumerable.ElementAt(Mathf.Clamp(index, 0, enumerable.Count() - 1));
         }
-        public static T            GetRandom<T>         (this IEnumerable<T> enumerable, T defaultT = default)
+        public static T            GetRandom<T>         (this IEnumerable<T> enumerable)
         {
-            if (enumerable == null || enumerable.Count() == 0) return defaultT;
+            if (enumerable.IsNullOrEmpty())
+                return default;
             int index = UnityEngine.Random.Range(0, enumerable.Count());
             return enumerable.ElementAt(index);
         }
-        public static T            Find<T>              (this IEnumerable<T> enumerable, Predicate<T> predicate, T defaultT = default)
+        public static T            Find<T>              (this IEnumerable<T> enumerable, Predicate<T> predicate)
         {
-            if (enumerable == null || enumerable.Count() == 0) return defaultT;
+            if (enumerable.IsNullOrEmpty())
+                return default;
             foreach (T elem in enumerable)
             {
                 if (predicate(elem)) return elem;
             }
-            return defaultT;
+            return default;
+        }
+        public static bool Find<T>(this IEnumerable<T> enumerable, Predicate<T> predicate, out T ans)
+        {
+            ans = default;
+            if (enumerable.IsNullOrEmpty())
+                return false;
+            foreach (T elem in enumerable)
+            {
+                if (predicate(elem))
+                {
+                    ans = elem;
+                    return true;
+                }
+            }
+            return false;
         }
         public static bool         Contains<T>          (this IEnumerable<T> enumerable, T element)
         {
@@ -1502,15 +1522,11 @@ namespace sxg
             var v = Enum.GetValues(typeof(T));
             return (T)v.GetValue(UnityEngine.Random.Range(0, v.Length));
         }
-        public static T[]          EnumValues<T>()
+        public static IEnumerable<T>          EnumValues<T>()
         {
-            var v = Enum.GetValues(typeof(T));
-            T[] ans = new T[v.Length];
+            Array v = Enum.GetValues(typeof(T));
             for (int i = 0; i < v.Length; i++)
-            {
-                ans[i] = (T)v.GetValue(i);
-            }
-            return ans;
+                yield return (T)v.GetValue(i);
         }
         [Obsolete("Method is deprecated, use Enum.Parse<T> instead", true)]
         public static T            ParseEnum<T>(this string value) where T: struct
@@ -1634,6 +1650,16 @@ namespace sxg
             for (int i = 0; i < transform.childCount; ++i)
             {
                 yield return transform.GetChild(i);
+            }
+        }
+        public static IEnumerable<Transform> GetAncestors(this Transform transform, bool includeSelf = false)
+        {
+            if (includeSelf)
+                yield return transform;
+            while(transform.parent != null)
+            {
+                transform = transform.parent;
+                yield return transform;
             }
         }
         public static IEnumerable<T> GetChildrenOfType<T>(this Transform transform, bool includeSelf = false) where T : Component
