@@ -53,25 +53,24 @@ namespace sxg
         }
 
         public CFrame(Transform t) // not using default parameter below for implicit conversion
-            : this(t, false)
+            : this(t, Space.World)
         {
         }
-        public CFrame(Transform t, bool local)
+        public CFrame(Transform t, Space space)
         {
             if (t == null)
                 (position, rotation) = (Vector3.zero, Quaternion.identity);
-            else if (!local)
+            else if (space == Space.World)
                 (position, rotation) = (t.position, t.rotation);
             else
                 (position, rotation) = (t.localPosition, t.localRotation);
         }
 
-        public static CFrame identity => new(Vector3.zero, Quaternion.identity);
-
         public static implicit operator CFrame(Transform t)
         {
-            return new(t);
+            return new(t, Space.World);
         }
+
 #if SNETCODE
         public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
         {
@@ -84,19 +83,12 @@ namespace sxg
         {
             return new CFrame(a.position + (a.rotation * b.position), a.rotation * b.rotation);
         }
-        public static CFrame operator *(CFrame a, Transform b)
-        {
-            return a * new CFrame(b);
-        }
-        public static CFrame operator *(Transform a, CFrame b)
-        {
-            return new CFrame(a) * b;
-        }
         public static Vector3 operator *(CFrame a, Vector3 b)
         {
             return a.position + (a.rotation * b);
         }
 
+#pragma warning disable IDE1006 // Naming Styles
         public CFrame inverse
         {
             get
@@ -106,12 +98,6 @@ namespace sxg
             }
         }
 
-        public static CFrame Lerp(CFrame a, CFrame b, float t)
-        {
-            return new CFrame(
-                Vector3.Lerp(a.position, b.position, t),
-                Quaternion.Slerp(a.rotation, b.rotation, t));
-        }
         public Vector3 eulerAngles
         {
             get => rotation.eulerAngles;
@@ -122,13 +108,21 @@ namespace sxg
             get => rotation.ToAxisTimesAngle();
             set => rotation = Utility.QuaternionFromAxisTimesAngle(value);
         }
+        public static CFrame identity => new(Vector3.zero, Quaternion.identity);
 
+        public static CFrame Lerp(CFrame a, CFrame b, float t)
+        {
+            return new CFrame(
+                Vector3.Lerp(a.position, b.position, t),
+                Quaternion.Slerp(a.rotation, b.rotation, t));
+        }
         public static CFrame SmoothDamp(CFrame current, CFrame target, ref CFrame currentVelocity, float smoothTime)// float maxSpeed, float deltaTime)
         {
             return new CFrame(
                 Vector3.SmoothDamp(current.position, target.position, ref currentVelocity.position, smoothTime),
                 Utility.SmoothDamp(current.rotation, target.rotation, ref currentVelocity.rotation, smoothTime));
         }
+#pragma warning restore IDE1006 // Naming Styles
     }
 
 

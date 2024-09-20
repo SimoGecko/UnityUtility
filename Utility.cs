@@ -1966,11 +1966,11 @@ namespace sxg
                 return t.GetComponent<T>();
             return default;
         }
-        public static void         Set                  (this Transform transform, CFrame cframe)
+        public static void         SetCFrame            (this Transform transform, CFrame cframe)
         {
             transform.SetPositionAndRotation(cframe.position, cframe.rotation);
         }
-        public static void         SetLocal             (this Transform transform, CFrame cframe)
+        public static void         SetCFrameLocal       (this Transform transform, CFrame cframe)
         {
             transform.SetLocalPositionAndRotation(cframe.position, cframe.rotation);
         }
@@ -2003,7 +2003,7 @@ namespace sxg
                 cfs[i] = new(transform.GetChild(i));
             transform.SetPositionAndRotation(position, rotation);
             for (int i = 0; i < transform.childCount; ++i)
-                transform.GetChild(i).Set(cfs[i]);
+                transform.GetChild(i).SetCFrame(cfs[i]);
         }
 
 

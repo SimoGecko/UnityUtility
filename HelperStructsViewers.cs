@@ -151,6 +151,43 @@ namespace sxg
         }
     }
     */
+
+    [CustomPropertyDrawer(typeof(CFrame))]
+    public class CFrameDrawer : PropertyDrawer
+    {
+        public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
+        {
+            EditorGUI.BeginProperty(position, label, property);
+
+            position = EditorGUI.PrefixLabel(position, GUIUtility.GetControlID(FocusType.Passive), label);
+            EditorGUI.indentLevel = 0;
+
+            SerializedProperty positionProperty = property.FindPropertyRelative("position");
+            SerializedProperty rotationProperty = property.FindPropertyRelative("rotation");
+
+            Rect posRect = new(position.x, position.y, position.width, EditorGUIUtility.singleLineHeight);
+            Rect rotRect = new(position.x, position.y + EditorGUIUtility.singleLineHeight + 2, position.width, EditorGUIUtility.singleLineHeight);
+
+            float labelWidth = EditorGUIUtility.labelWidth;
+            EditorGUIUtility.labelWidth = 60f;
+            EditorGUI.PropertyField(posRect, positionProperty, new GUIContent("Position"));
+
+            Quaternion rotation = rotationProperty.quaternionValue;
+            Vector3 eulerAngles = rotation.eulerAngles;
+            eulerAngles = EditorGUI.Vector3Field(rotRect, "Rotation", eulerAngles);
+            rotationProperty.quaternionValue = Quaternion.Euler(eulerAngles);
+
+            EditorGUI.EndProperty();
+            EditorGUIUtility.labelWidth = labelWidth;
+        }
+
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            return EditorGUIUtility.singleLineHeight * 2 + 4;
+        }
+    }
+
+
 #endif
 
 }
