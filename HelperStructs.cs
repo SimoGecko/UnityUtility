@@ -87,6 +87,10 @@ namespace sxg
         {
             return a.position + (a.rotation * b);
         }
+        public static CFrame operator *(CFrame a, float b)
+        {
+            return new CFrame(a.position * b, a.rotation);
+        }
 
 #pragma warning disable IDE1006 // Naming Styles
         public CFrame inverse
